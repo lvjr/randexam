@@ -5,9 +5,9 @@
 % ----------------------------------------------------------------------------
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{randexam}[2024-01-17 v2024A Make an exam and its randomized variants]
+\ProvidesClass{randexam}[2024-01-20 v2024B Make an exam paper and its randomized variants]
 
-%% 旧版本的 LaTeX 不能识别 2022-11-01 这种日期格式
+%% Old LaTeX release could not recongnize date format like 2022-11-01
 %\@ifl@t@r\fmtversion{2022-11-01}{}{
 \@ifl@t@r\fmtversion{2022/11/01}{}{
   \ClassError{randexam}{%
@@ -18,42 +18,35 @@
 
 \RequirePackage{etoolbox}
 
-\newif\ifplain       \plainfalse      % 是否添加装订线和草稿纸
-\newif\iftwoinone    \twoinonefalse   % 是否使用 A3 纸张
-\newif\ifoneside     \onesidefalse    % 是否单面印刷试卷
-\newif\ifresetnumber \resetnumbertrue % 是否对各题型小题分别编号
-\newif\ifrandom      \randomfalse     % 是否乱序出题
-\newif\ifanswer      \answertrue      % 是否显示答案
-\newif\ifamsfonts    \amsfontsfalse   % 切换数学字体
-\newif\iffreealign   \freealignfalse  % load freealign package
-\newif\ifcellspace   \cellspacefalse  % 增加表格列间距
-\newif\ifmedmath     \medmathfalse    % 切换公式尺寸
-\newif\ifgrader      \graderfalse     % add grader line in the grade table
+\newbool{plain}       \boolfalse{plain}      % use plain page style
+\newbool{twoinone}    \boolfalse{twoinone}   % use A3 paper
+\newbool{oneside}     \boolfalse{oneside}    % use single sided exam paper
+\newbool{resetnumber} \booltrue{resetnumber} % reset numbers in new exam groups
+\newbool{random}      \boolfalse{random}     % shuffle questions
+\newbool{answer}      \booltrue{answer}      % show answers
+\newbool{amsfonts}    \boolfalse{amsfonts}   % use ams fonts
+\newbool{freealign}   \boolfalse{freealign}  % load freealign package
+\newbool{medmath}     \boolfalse{medmath}    % use medium-size formulas
+\newbool{grader}      \boolfalse{grader}     % add grader line in the grade table
 
-\DeclareOption{plain}{\plaintrue}
-\DeclareOption{a3paper}{\twoinonetrue}
-\DeclareOption{a3input}{\twoinonetrue\plaintrue}
-\DeclareOption{oneside}{\onesidetrue}
-\DeclareOption{random}{\randomtrue}
-\DeclareOption{noanswer}{\answerfalse}
-\DeclareOption{amsfonts}{\amsfontstrue}
-\DeclareOption{freealign}{\freealigntrue}
-\DeclareOption{medmath}{\cellspacetrue\medmathtrue}
-\DeclareOption{grader}{\gradertrue}
-
-\DeclareOption{many}{%
-  \booltrue{freealign}%
+\DeclareKeys{
+  plain     .if    = plain,
+  a3paper   .if    = twoinone,
+  a3input   .code  = \booltrue{twoinone}\booltrue{plain},
+  oneside   .if    = oneside,
+  random    .if    = random,
+  noanswer  .ifnot = answer,
+  amsfonts  .if    = amsfonts,
+  freealign .if    = freealign,
+  medmath   .if    = medmath,
+  grader    .if    = grader,
+  many      .code  = \booltrue{freealign},
+  most      .code  = \booltrue{freealign}\booltrue{medmath}
 }
 
-\DeclareOption{most}{%
-  \booltrue{freealign}%
-  \booltrue{medmath}%
-  \booltrue{cellspace}%
-}
+\DeclareUnknownKeyHandler{\PassOptionsToClass{\CurrentOption}{article}}
 
-\DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}} % other options
-
-\ProcessOptions\relax
+\ProcessKeyOptions
 
 \LoadClass{article}
 
@@ -95,10 +88,10 @@
 \setlength{\lineskiplimit}{4pt}
 \setlength{\lineskip}{4pt}
 
-\newcommand{\setexam}[1]{\setkeys{exam@setup}{#1}}
+\NewDocumentCommand\SetExamOption{+m}{\SetKeys[randexam]{#1}}
 
 %% ---------------------------------------------------------------------------
-%% 试卷表头命令 \makehead
+%% Command for exam title: \examtitle
 %% ---------------------------------------------------------------------------
 
 \newcommand{\underspace}[1]{\kern0pt\underline{\hspace{#1}}\kern0pt\relax}
@@ -108,26 +101,33 @@
 \newcommand{\ischeck}[1]{\ifnum#1>0\,$\checkmark$\,\else\quad\fi}
 \newcommand{\isquad}[1]{\ifnum#1=0\,$\checkmark$\,\else\quad\fi}
 
-\newcommand\my@temp@a{A}
-\newcommand\my@temp@c{C}
-\newcommand\my@empty{}
+\def\rdxm@temp@a{A}
+\def\rdxm@temp@c{C}
+\def\rdxm@empty{}
 
-\newcommand{\examtitle}{Math 1906}
-\newcommand{\examdate}{\today}
-\newcommand{\examvariant}{A}
+\DeclareKeys[randexam-title]{
+  name    .store = \@rdxm@title@name,
+  date    .store = \@rdxm@title@date,
+  version .store = \@rdxm@title@version
+}
 
-\newcommand\makehead{
+\NewDocumentCommand\SetExamTitle{+m}{\SetKeys[randexam-title]{#1}}
+
+\SetExamTitle{name=Math 1906,date=\today,version=A}
+
+\newcommand\examtitle[1]{%
+  \SetExamTitle{#1}%
   \thispagestyle{plain}
   \ifbool{random}{%
-    \ifx\examvariant\my@temp@a\renewcommand{\examvariant}{B}\fi
-    \ifx\examvariant\my@temp@c\renewcommand{\examvariant}{D}\fi
+    \ifx\@rdxm@title@version\rdxm@temp@a\def\@rdxm@title@version{B}\fi
+    \ifx\@rdxm@title@version\rdxm@temp@c\def\@rdxm@title@version{D}\fi
   }{}%
   \begingroup
   \Large\noindent
   \ifbool{answer}{%
-    \textcolor{red!80!black}{\examtitle\hfill Solutions}%
+    \textcolor{red!80!black}{\@rdxm@title@name\hfill Solutions}%
   }{%
-    \examtitle\hfill Name:\underspace{6em}%
+    \@rdxm@title@name\hfill Name:\underspace{6em}%
   }\par
   \endgroup
 }
@@ -136,16 +136,19 @@
 %% Command for grade table: \gradetable
 %% ---------------------------------------------------------------------------
 
-\let\exam@part@number=\Roman
-\define@key{exam@setup}{partnumber}[\Roman]{\let\exam@part@number=#1}
-
-\newcounter{@exam@grade@cnt}
-\newcommand\my@part@number[1]{%
-  \stepcounter{@exam@grade@cnt}%
-  \exam@part@number{@exam@grade@cnt}%
+%% You need to put .code:n before .initial:n
+\DeclareKeys[randexam]{%
+  groupnumber .code:n    = \let\exam@group@number#1,
+  groupnumber .initial:n = \Roman,
 }
 
-\newcommand\insertpartname{Part}
+\newcounter{@exam@grade@cnt}
+\newcommand\rdxm@group@number[1]{%
+  \stepcounter{@exam@grade@cnt}%
+  \exam@group@number{@exam@grade@cnt}%
+}
+
+\newcommand\insertgroupname{Part}
 \newcommand\insertscorename{Score}
 \newcommand\insertgradername{Grader}
 \newcommand\inserttotalname{Total}
@@ -155,9 +158,9 @@
   \setcounter{@exam@grade@cnt}{0}%
   \noindent\begin{tabularx}{\linewidth}{|*{8}{Y|}}
     \hline
-    \textbf{\insertpartname}
-      & \my@part@number{1} & \my@part@number{2} & \my@part@number{3}
-      & \my@part@number{4} & \my@part@number{5} & \my@part@number{6}
+    \textbf{\insertgroupname}
+      & \rdxm@group@number{1} & \rdxm@group@number{2} & \rdxm@group@number{3}
+      & \rdxm@group@number{4} & \rdxm@group@number{5} & \rdxm@group@number{6}
       & \inserttotalname\\
     \hline
     \textbf{\insertscorename}\rule[-0.75em]{0pt}{2.5em} &  &  &  &  &  &  & \\
@@ -170,30 +173,30 @@
 }
 
 %% ---------------------------------------------------------------------------
-%% 页眉页脚设定
+%% Setting header and footer
 %% ---------------------------------------------------------------------------
 
-\newcommand{\my@columnbox}[1]{\makebox[\columnwidth]{#1}}
-\newcommand{\my@headleft}{\examtitle}
-\newcommand{\my@headright}{\ifbool{answer}{Solutions}{Name:\hspace{12em}}}
-\newcommand{\my@headtext}{\my@headleft\hfill\my@headright}
-\newcommand{\my@footleft}{\examdate}
-\newcommand{\my@footcenter}{Page~\thepage~of~\zpageref{LastPage}}
-\newcommand{\my@footright}{Version \examvariant}
-\newcommand{\my@foottext}{\my@footleft\hfill\my@footcenter\hfill\my@footright}
+\newcommand{\rdxm@columnbox}[1]{\makebox[\columnwidth]{#1}}
+\newcommand{\rdxm@headleft}{\@rdxm@title@name}
+\newcommand{\rdxm@headright}{\ifbool{answer}{Solutions}{Name:\hspace{12em}}}
+\newcommand{\rdxm@headtext}{\rdxm@headleft\hfill\rdxm@headright}
+\newcommand{\rdxm@footleft}{\@rdxm@title@date}
+\newcommand{\rdxm@footcenter}{Page~\thepage~of~\zpageref{LastPage}}
+\newcommand{\rdxm@footright}{Version \@rdxm@title@version}
+\newcommand{\rdxm@foottext}{\rdxm@footleft\hfill\rdxm@footcenter\hfill\rdxm@footright}
 
 % fancy page style
 \fancyhf{} % clear head and foot
 \iftwoinone
   \renewcommand{\headrulewidth}{0pt}%
-  \lhead{\small\underline{\my@columnbox{\my@headtext}\strut}}
-  \rhead{\small\underline{\my@columnbox{\my@headtext}\strut}}
-  \lfoot{\small\my@columnbox{\my@foottext}}
-  \rfoot{\small\my@columnbox{\stepcounter{page}\my@foottext}}
+  \lhead{\small\underline{\rdxm@columnbox{\rdxm@headtext}\strut}}
+  \rhead{\small\underline{\rdxm@columnbox{\rdxm@headtext}\strut}}
+  \lfoot{\small\rdxm@columnbox{\rdxm@foottext}}
+  \rfoot{\small\rdxm@columnbox{\stepcounter{page}\rdxm@foottext}}
 \else
-  \lhead{\small\my@headleft}
-  \rhead{\small\my@headright}
-  \cfoot{\small\my@foottext}
+  \lhead{\small\rdxm@headleft}
+  \rhead{\small\rdxm@headright}
+  \cfoot{\small\rdxm@foottext}
 \fi
 
 % plain page style
@@ -201,11 +204,11 @@
   \renewcommand{\headrulewidth}{0pt}%
   \fancyhf{}
   \iftwoinone
-    \rhead{\small\underline{\my@columnbox{\my@headtext\strut}}}
-    \lfoot{\small\my@columnbox{\my@foottext}}
-    \rfoot{\small\my@columnbox{\stepcounter{page}\my@foottext}}
+    \rhead{\small\underline{\rdxm@columnbox{\rdxm@headtext\strut}}}
+    \lfoot{\small\rdxm@columnbox{\rdxm@foottext}}
+    \rfoot{\small\rdxm@columnbox{\stepcounter{page}\rdxm@foottext}}
   \else
-    \cfoot{\small\my@foottext}
+    \cfoot{\small\rdxm@foottext}
   \fi
 }
 
@@ -216,137 +219,142 @@
 \fi
 
 %% ---------------------------------------------------------------------------
-%% 乱序排列选项 random
-%% 随机种子选项 seed
+%% Class option for shuffling questions: random
+%% Class option for random seed: seed
 %% ---------------------------------------------------------------------------
 
-%% 随机数种子不能超过 2147483647 = "7FFFFFFF
-\def\my@random@seed{19061116}
-\define@key{exam@setup}{seed}[19061116]{\def\my@random@seed{#1}}
+%% The random seed could not exceed 2147483647 = "7FFFFFFF
+%% You need to put .store before .initial:n
+\DeclareKeys[randexam]{
+  seed .store     = \rdxm@random@seed,
+  seed .initial:n = 19061116
+}
 
 \ifrandom
   \RequirePackage{pgf}
   \RequirePackage{pgffor}
   \newcommand*\exam@set@seed{%
     %% 当\pgfmathrandom的参数为3的倍数时，对相邻种子生成的多个随机数分布不均匀
-    %\pgfmathsetseed{\numexpr\my@random@seed+\value{section}-1\relax}%
+    %\pgfmathsetseed{\numexpr\rdxm@random@seed+\value{rdxm@group}-1\relax}%
     %% 因此我们改用下面的方法，用随机数种子生成下一个随机数种子
-    \pgfmathsetseed{\my@random@seed}%
-    \pgfmathrandominteger\my@random@seed{1}{2147483647}%
+    \pgfmathsetseed{\rdxm@random@seed}%
+    \pgfmathrandominteger\rdxm@random@seed{1}{2147483647}%
   }
 \fi
 
 %% ---------------------------------------------------------------------------
-%% 题型命令 \makepart
-%% 附录命令 \makedata
-%% 题目环境 problem
-%% 解答环境 solution
+%% Command for exam groups: \examgroup
+%% Command for appendix data: \examdata
+%% Environment for questions: question
+%% Environment for solutions: solution
 %% ---------------------------------------------------------------------------
 
-\newif\ifonlyoneproblem \onlyoneproblemfalse % 此部分仅有一道题时不显示题目编号
-\xdef\allproblems{}
-\xdef\lastproblem{}
-\newcounter{problem}        % 当前题型的小题编号
-\newcounter{problemreal}    % 实际显示的小题编号，在各题型小题统一编号时使用
-\newcounter{totalproblems}  % 之前各题型小题总数，在各题型小题统一编号时使用
+\newif\ifonlyonequestion \onlyonequestionfalse % 此部分仅有一道题时不显示题目编号
+\xdef\allquestions{}
+\xdef\lastquestion{}
+\newcounter{question}        % 当前题型的小题编号
+\newcounter{questionreal}    % 实际显示的小题编号，在各题型小题统一编号时使用
+\newcounter{totalquestions}  % 之前各题型小题总数，在各题型小题统一编号时使用
 \newcommand{\solutionname}{Solution}
 \newcounter{choice} % 后面选择题的 abcd 环境要用到
 \newcommand{\hangtext}{}
 \newlength{\hanglength}
-\colorlet{part number}{black}
-\colorlet{problem number}{blue!80!black}
+\colorlet{group number}{black}
+\colorlet{question number}{blue!80!black}
 \colorlet{solution name}{blue!80!black}
 
-\newcounter{my@shuffle@temp@cnt}
-\newcounter{my@list@temp@cnt}
+\newcounter{rdxm@shuffle@temp@cnt}
+\newcounter{rdxm@list@temp@cnt}
 
-\newcommand\my@list@print[1]{%
+\newcommand\rdxm@list@print[1]{%
   \par\renewcommand*{\do}[1]{(##1)}%
   \dolistloop#1%
 }
 
-\newcommand\my@list@remove[2]{%
-  %\my@list@print\my@shuffle@list
-  \setcounter{my@list@temp@cnt}{0}%
-  \global\let\my@tmpa@list=#1%
+\newcommand\rdxm@list@remove[2]{%
+  %\rdxm@list@print\rdxm@shuffle@list
+  \setcounter{rdxm@list@temp@cnt}{0}%
+  \global\let\rdxm@tmpa@list=#1%
   \gdef#1{}%
   \par\renewcommand*{\do}[1]{%
-    \stepcounter{my@list@temp@cnt}%
-    \ifnumequal{\value{my@list@temp@cnt}}{#2}{%
-      \def\my@list@item{##1}%
+    \stepcounter{rdxm@list@temp@cnt}%
+    \ifnumequal{\value{rdxm@list@temp@cnt}}{#2}{%
+      \def\rdxm@list@item{##1}%
       %[##1]%
     }{
       \listxadd#1{##1}%
     }%
   }%
-  \dolistloop\my@tmpa@list
+  \dolistloop\rdxm@tmpa@list
 }
 
-\newcommand\my@shuffle@problems{%
+\newcommand\rdxm@shuffle@questions{%
   \exam@set@seed
-  \ifnumgreater{\value{problem}}{2}{%
-    \gdef\my@shuffle@list{}%
-    \foreach \i in {1,...,\value{problem}} {\listxadd\my@shuffle@list{\i}}%
+  \ifnumgreater{\value{question}}{2}{%
+    \gdef\rdxm@shuffle@list{}%
+    \foreach \i in {1,...,\value{question}} {\listxadd\rdxm@shuffle@list{\i}}%
     %% 首尾两个小题的位置总要改变
-    \pgfmathrandom{2,\value{problem}}%
-    \my@list@remove\my@shuffle@list{\pgfmathresult}%
-    \global\csletcs{my@problem@b@1}{my@problem@a@\my@list@item}%
-    \ifnumequal{\my@list@item}{\value{problem}}{
-      \pgfmathrandom{\numexpr\value{problem}-1\relax}%
-      \my@list@remove\my@shuffle@list{\pgfmathresult}%
-      \global\csletcs{my@problem@b@\the\value{problem}}{my@problem@a@\my@list@item}%
+    \pgfmathrandom{2,\value{question}}%
+    \rdxm@list@remove\rdxm@shuffle@list{\pgfmathresult}%
+    \global\csletcs{rdxm@question@b@1}{rdxm@question@a@\rdxm@list@item}%
+    \ifnumequal{\rdxm@list@item}{\value{question}}{
+      \pgfmathrandom{\numexpr\value{question}-1\relax}%
+      \rdxm@list@remove\rdxm@shuffle@list{\pgfmathresult}%
+      \global\csletcs{rdxm@question@b@\the\value{question}}{rdxm@question@a@\rdxm@list@item}%
     }{%
-      \pgfmathrandom{\numexpr\value{problem}-2\relax}%
-      \my@list@remove\my@shuffle@list{\pgfmathresult}%
-      \global\csletcs{my@problem@b@\the\value{problem}}{my@problem@a@\my@list@item}%
+      \pgfmathrandom{\numexpr\value{question}-2\relax}%
+      \rdxm@list@remove\rdxm@shuffle@list{\pgfmathresult}%
+      \global\csletcs{rdxm@question@b@\the\value{question}}{rdxm@question@a@\rdxm@list@item}%
     }%
     %% 其他小题的位置没有任何限制
-    \setcounter{my@shuffle@temp@cnt}{1}%
+    \setcounter{rdxm@shuffle@temp@cnt}{1}%
     \whileboolexpr{%
-      test{\ifnumless{\value{my@shuffle@temp@cnt}}{\numexpr\value{problem}-1\relax}}%
+      test{\ifnumless{\value{rdxm@shuffle@temp@cnt}}{\numexpr\value{question}-1\relax}}%
     }{%
-      \stepcounter{my@shuffle@temp@cnt}%
-      \pgfmathrandom{\numexpr\value{problem}-\value{my@shuffle@temp@cnt}\relax}%
-      \my@list@remove\my@shuffle@list{\pgfmathresult}%
-      \global\csletcs{my@problem@b@\the\value{my@shuffle@temp@cnt}}{%
-        my@problem@a@\my@list@item
+      \stepcounter{rdxm@shuffle@temp@cnt}%
+      \pgfmathrandom{\numexpr\value{question}-\value{rdxm@shuffle@temp@cnt}\relax}%
+      \rdxm@list@remove\rdxm@shuffle@list{\pgfmathresult}%
+      \global\csletcs{rdxm@question@b@\the\value{rdxm@shuffle@temp@cnt}}{%
+        rdxm@question@a@\rdxm@list@item
       }%
     }%
   }{%
-    \ifnumequal{\value{problem}}{2}{%
-      \global\csletcs{my@problem@b@1}{my@problem@a@2}%
-      \global\csletcs{my@problem@b@2}{my@problem@a@1}%
+    \ifnumequal{\value{question}}{2}{%
+      \global\csletcs{rdxm@question@b@1}{rdxm@question@a@2}%
+      \global\csletcs{rdxm@question@b@2}{rdxm@question@a@1}%
     }{}%
   }%
 }
 
-\newcommand{\printproblems}{%
+\newcommand{\printquestions}{%
   \ifrandom
-    \my@appto@problems
-    \my@shuffle@problems
-    \setcounter{problem}{0}%
-    \allproblems
+    \rdxm@appto@questions
+    \rdxm@shuffle@questions
+    \setcounter{question}{0}%
+    \allquestions
   \fi
-  \xdef\allproblems{}%
-  \xdef\lastproblem{}%
+  \xdef\allquestions{}%
+  \xdef\lastquestion{}%
 }
 
-\newcommand\insertpart[2]{%
-  \noindent\textbf{\textcolor{part number}{Part~\Roman{section}}: #1} (#2)%
+\newcounter{rdxm@group}
+
+\newcommand\insertgroup[2]{%
+  \noindent\textbf{\textcolor{group number}{Part~\Roman{rdxm@group}}: #1} (#2)%
 }
 
-\newcommand{\makepart}[2]{%
-  \printproblems
-  \setcounter{totalproblems}{\value{totalproblems}+\value{problem}}%
-  \setcounter{problem}{0}%
-  \stepcounter{section}%
+\newcommand{\examgroup}[2]{%
+  \printquestions
+  \setcounter{totalquestions}{\value{totalquestions}+\value{question}}%
+  \setcounter{question}{0}%
+  \stepcounter{rdxm@group}%
   \vspace{1em}%
-  \insertpart{#1}{#2}%
+  \insertgroup{#1}{#2}%
   \par\nopagebreak
   \if\relax\detokenize{#1}\relax % #1 is empty
-    \onlyoneproblemtrue
+    \onlyonequestiontrue
   \else
-    \onlyoneproblemfalse
+    \onlyonequestionfalse
     \vspace{1em}%
   \fi
   %其中设定了\@nobreaktrue，保证在列表前也不分页，详情见 source2e
@@ -354,49 +362,49 @@
 }
 
 \renewcommand\appendixname{Appendix}
-\newcommand{\makedata}[1]{%
-  \printproblems\my@stop@random
+\newcommand{\examdata}[1]{%
+  \printquestions\rdxm@stop@random
   \centerline{\textbf{\appendixname}\quad #1}\smallskip
 }
 
-\preto{\@enddocumenthook}{\printproblems\my@stop@random}
+\preto{\@enddocumenthook}{\printquestions\rdxm@stop@random}
 
 \newcommand\ignorepars{\@ifnextchar\par{\expandafter\ignorepars\@gobble}{}}
 
 % 局部定义，仅在当前题目内有效
-\define@key{exam@problem}{points}[-1]{\def\my@problem@points{#1}}
-\define@key{exam@problem}{level}[]{\def\my@problem@level{#1}}
-\define@key{exam@problem}{year}[]{\def\my@problem@year{#1}}
+\define@key{exam@question}{points}[-1]{\def\rdxm@question@points{#1}}
+\define@key{exam@question}{level}[]{\def\rdxm@question@level{#1}}
+\define@key{exam@question}{year}[]{\def\rdxm@question@year{#1}}
 
 \newcommand\pointname{point}
 \newcommand\pointsname{points}
 \newcommand\pointorpoints[1]{\ifnumgreater{#1}{1}{\pointsname}{\pointname}}
 
-\newcommand{\problempointstext}[1]{ (#1 \pointorpoints{#1}) }
+\newcommand{\questionpointstext}[1]{ (#1 \pointorpoints{#1}) }
 
-\newcommand\my@hook@exec@other@keys{}
+\newcommand\rdxm@hook@exec@other@keys{}
 
-\newcommand{\execute@problem@keys}[1]{%
-  \setkeys{exam@problem}{#1}%
-  \my@hook@exec@other@keys
-  \ifdefvoid{\my@problem@points}{}{\problempointstext{\my@problem@points}}%
+\newcommand{\execute@question@keys}[1]{%
+  \setkeys{exam@question}{#1}%
+  \rdxm@hook@exec@other@keys
+  \ifdefvoid{\rdxm@question@points}{}{\questionpointstext{\rdxm@question@points}}%
 }
 
-\newenvironment{problemreal}[1][]{%
-  \stepcounter{problem}\setcounter{choice}{0}%
+\newenvironment{questionreal}[1][]{%
+  \stepcounter{question}\setcounter{choice}{0}%
   \ifresetnumber
-    \ifonlyoneproblem
+    \ifonlyonequestion
       \renewcommand{\hangtext}{\qquad}%
     \else
-      \renewcommand{\hangtext}{\textbf{\textsf{\textcolor{problem number}{\arabic{problem}}.}}\;\,}%
+      \renewcommand{\hangtext}{\textbf{\textsf{\textcolor{question number}{\arabic{question}}.}}\;\,}%
     \fi
   \else
-    \setcounter{problemreal}{\value{totalproblems}+\value{problem}}%
-    \renewcommand{\hangtext}{\textbf{\textsf{\textcolor{problem number}{\arabic{problemreal}}.}}\;\,}%
+    \setcounter{questionreal}{\value{totalquestions}+\value{question}}%
+    \renewcommand{\hangtext}{\textbf{\textsf{\textcolor{question number}{\arabic{questionreal}}.}}\;\,}%
   \fi
   \settowidth{\hanglength}{\hangtext}%
   \description[leftmargin=\hanglength,labelwidth=0pt,labelsep=0pt,topsep=0pt,parsep=0pt]
-  \item[\hangtext]\execute@problem@keys{#1}%
+  \item[\hangtext]\execute@question@keys{#1}%
 }{\enddescription}
 \newenvironment{solutionreal}{%
   \renewcommand{\hangtext}{\textbf{\textsf{\textcolor{solution name}{\solutionname}.}}\;\,}%
@@ -412,45 +420,45 @@
 \let \oldbigskip   = \bigskip
 
 \ifrandom
-  \newcommand\my@appto@problems{%
-    \xappto\allproblems{\expandonce\lastproblem}%
+  \newcommand\rdxm@appto@questions{%
+    \xappto\allquestions{\expandonce\lastquestion}%
   }%
-  \NewEnviron{problem}{%
-    \stepcounter{problem}%
-    \my@appto@problems
-    \csxdef{my@problem@a@\the\value{problem}}{%
-      \unexpanded{\begin{problemreal}}%
+  \NewEnviron{question}{%
+    \stepcounter{question}%
+    \rdxm@appto@questions
+    \csxdef{rdxm@question@a@\the\value{question}}{%
+      \unexpanded{\begin{questionreal}}%
       \unexpanded\expandafter{\BODY}%
-      \unexpanded{\end{problemreal}}%
+      \unexpanded{\end{questionreal}}%
     }%
-    \csxdef{my@problem@b@\the\value{problem}}{%
-      \expandonce{\csname my@problem@a@\the\value{problem}\endcsname}%
+    \csxdef{rdxm@question@b@\the\value{question}}{%
+      \expandonce{\csname rdxm@question@a@\the\value{question}\endcsname}%
     }%
-    \xdef\lastproblem{%
-      \expandonce{\csname my@problem@b@\the\value{problem}\endcsname}%
+    \xdef\lastquestion{%
+      \expandonce{\csname rdxm@question@b@\the\value{question}\endcsname}%
     }%
   }
   \NewEnviron{solution}{%
-    \csxappto{my@problem@a@\the\value{problem}}{%
+    \csxappto{rdxm@question@a@\the\value{question}}{%
       \unexpanded{\begin{solutionreal}}%
       \expandonce{\BODY}%
       \unexpanded{\end{solutionreal}}%
     }%
   }
-  \renewcommand{\newpage}{\gappto\lastproblem{\oldnewpage}}
-  \renewcommand{\vfill}{\csgappto{my@problem@a@\the\value{problem}}{\oldvfill}}
-  \renewcommand{\smallskip}{\csgappto{my@problem@a@\the\value{problem}}{\oldsmallskip}}
-  \renewcommand{\medskip}{\csgappto{my@problem@a@\the\value{problem}}{\oldmedskip}}
-  \renewcommand{\bigskip}{\csgappto{my@problem@a@\the\value{problem}}{\oldbigskip}}
+  \renewcommand{\newpage}{\gappto\lastquestion{\oldnewpage}}
+  \renewcommand{\vfill}{\csgappto{rdxm@question@a@\the\value{question}}{\oldvfill}}
+  \renewcommand{\smallskip}{\csgappto{rdxm@question@a@\the\value{question}}{\oldsmallskip}}
+  \renewcommand{\medskip}{\csgappto{rdxm@question@a@\the\value{question}}{\oldmedskip}}
+  \renewcommand{\bigskip}{\csgappto{rdxm@question@a@\the\value{question}}{\oldbigskip}}
 \else
-  \newenvironment{problem}[1][]{\problemreal[#1]}{\endproblemreal}
+  \newenvironment{question}[1][]{\questionreal[#1]}{\endquestionreal}
   %\newenvironment{solution}{\solutionreal}{\endsolutionreal}
   \NewEnviron{solution}{\begin{solutionreal}\BODY\end{solutionreal}}
 \fi
 
-\newcommand{\my@stop@random}{%
+\newcommand{\rdxm@stop@random}{%
   \ifrandom
-    \renewenvironment{problem}{\problemreal}{\endproblemreal}%
+    \renewenvironment{question}{\questionreal}{\endquestionreal}%
     \renewenvironment{solution}{\solutionreal}{\endsolutionreal}%
     \let \newpage   = \oldnewpage
     \let \vfill     = \oldvfill
@@ -469,7 +477,7 @@
 }
 
 %% ---------------------------------------------------------------------------
-%% 答题栏命令 \answertable
+%% Command for answer tables: \answertable
 %% ---------------------------------------------------------------------------
 
 \gdef\answer@lines@temp{}%
@@ -539,10 +547,10 @@
 }
 
 %% ---------------------------------------------------------------------------
-%% 答案切换命令 \answer
-%% 判断命令 \tickin 和 \tickout
-%% 填空命令 \fillin 和 \fillout
-%% 选择命令 \pickin 和 \pickout
+%% Command for toggling answers: \answer
+%% Command for true-or-false questions: \tickin and \tickout
+%% Command for fill-in-the-blank questions: \fillin and \fillout
+%% Command for multiple-choice questions: \pickin and \pickout
 %% ---------------------------------------------------------------------------
 
 \newcommand{\answer}[1]{\ifanswer#1\else\phantom{#1}\fi}
@@ -576,20 +584,20 @@
 %% 1：ABCD -> CDAB； 2：ABCD -> BADC; 3: ABCD -> DCBA
 %% 即在两行排列时仅用到上下交换以及左右交换，这样可以保持两行长度不变
 
-\csdef{my@shuffle@1@A}{C} \csdef{my@shuffle@2@A}{B} \csdef{my@shuffle@3@A}{D}
-\csdef{my@shuffle@1@B}{D} \csdef{my@shuffle@2@B}{A} \csdef{my@shuffle@3@B}{C}
-\csdef{my@shuffle@1@C}{A} \csdef{my@shuffle@2@C}{D} \csdef{my@shuffle@3@C}{B}
-\csdef{my@shuffle@1@D}{B} \csdef{my@shuffle@2@D}{C} \csdef{my@shuffle@3@D}{A}
+\csdef{rdxm@shuffle@1@A}{C} \csdef{rdxm@shuffle@2@A}{B} \csdef{rdxm@shuffle@3@A}{D}
+\csdef{rdxm@shuffle@1@B}{D} \csdef{rdxm@shuffle@2@B}{A} \csdef{rdxm@shuffle@3@B}{C}
+\csdef{rdxm@shuffle@1@C}{A} \csdef{rdxm@shuffle@2@C}{D} \csdef{rdxm@shuffle@3@C}{B}
+\csdef{rdxm@shuffle@1@D}{B} \csdef{rdxm@shuffle@2@D}{C} \csdef{rdxm@shuffle@3@D}{A}
 
-\def\@my@choice@random{0}
-\newcommand\my@shuffle@abcd[1]{\csuse{my@shuffle@\@my@choice@random @#1}}
+\def\@rdxm@choice@random{0}
+\newcommand\rdxm@shuffle@abcd[1]{\csuse{rdxm@shuffle@\@rdxm@choice@random @#1}}
 
 \newcommand*\pickout[1]{%
   \ifbool{random}{%
     \exam@set@seed
-    \pgfmathrandominteger\@my@choice@random{1}{3}%
-    %\@my@choice@random
-    \pickoutreal{\my@shuffle@abcd{#1}}%
+    \pgfmathrandominteger\@rdxm@choice@random{1}{3}%
+    %\@rdxm@choice@random
+    \pickoutreal{\rdxm@shuffle@abcd{#1}}%
   }{%
     \pickoutreal{#1}%
   }%
@@ -601,9 +609,9 @@
 \newcommand*\pickin[1]{%
   \ifbool{random}{%
     \exam@set@seed
-    \pgfmathrandominteger\@my@choice@random{1}{3}%
-    %\@my@choice@random
-    \pickinreal{\my@shuffle@abcd{#1}}%
+    \pgfmathrandominteger\@rdxm@choice@random{1}{3}%
+    %\@rdxm@choice@random
+    \pickinreal{\rdxm@shuffle@abcd{#1}}%
   }{%
     \pickinreal{#1}%
   }%
@@ -614,28 +622,28 @@
 }
 
 %% ---------------------------------------------------------------------------
-%% 选择题四个选项排版环境，根据四个选项的长度自动排成一行、两行或四行
-%% 其中 abcd 环境各列平分整行宽度，而 abcd* 环境各列平分剩余空白
+%% Environment abcd for typesetting options of multiple-choice questions
+%% Put them in one, two, or four rows according to the lengths of the choices
 %% ---------------------------------------------------------------------------
 
-\newlength{\my@item@len}
-\newlength{\my@label@len}
+\newlength{\rdxm@item@len}
+\newlength{\rdxm@label@len}
 
-\newcommand\my@item@temp{%
+\newcommand\rdxm@item@temp{%
   \unskip\cr\stepcounter{choice}(\Alph{choice})\ %
 }
-\newcommand\my@item@box{%
-  \hfill\egroup\hfill\hbox to \my@item@len\bgroup
+\newcommand\rdxm@item@box{%
+  \hfill\egroup\hfill\hbox to \rdxm@item@len\bgroup
   \stepcounter{choice}(\Alph{choice})\ \ignorespaces
 }
-\newcommand\my@item@par{%
+\newcommand\rdxm@item@par{%
   \stepcounter{choice}%
-  \def\my@label@text{(\Alph{choice})\ }%
-  \settowidth{\my@label@len}{\my@label@text}%
+  \def\rdxm@label@text{(\Alph{choice})\ }%
+  \settowidth{\rdxm@label@len}{\rdxm@label@text}%
   \par \parshape 2 \hanglength \linewidth
-  \dimexpr\hanglength + \my@label@len\relax
-  \dimexpr\linewidth - \my@label@len\relax
-  \my@label@text\ignorespaces
+  \dimexpr\hanglength + \rdxm@label@len\relax
+  \dimexpr\linewidth - \rdxm@label@len\relax
+  \rdxm@label@text\ignorespaces
 }
 
 \NewEnviron{abcdreal}{
@@ -643,30 +651,30 @@
   \setlength{\parindent}{0pt}%
   \setlength{\parskip}{0pt}%
   \setcounter{choice}{0}%
-  \let\item=\my@item@temp
-  \settowidth{\my@item@len}{\vbox{\halign{##\hfil\cr\BODY\crcr}}}%
+  \let\item=\rdxm@item@temp
+  \settowidth{\rdxm@item@len}{\vbox{\halign{##\hfil\cr\BODY\crcr}}}%
   \setcounter{choice}{0}%
-  \ifdim\my@item@len>0.486\linewidth
-    \setlength{\my@item@len}{\linewidth}%
-    \let\item=\my@item@par
+  \ifdim\rdxm@item@len>0.486\linewidth
+    \setlength{\rdxm@item@len}{\linewidth}%
+    \let\item=\rdxm@item@par
     \BODY\par
   \else
-    \ifdim\my@item@len>.243\linewidth
-      \setlength{\my@item@len}{0.5\linewidth}%
+    \ifdim\rdxm@item@len>.243\linewidth
+      \setlength{\rdxm@item@len}{0.5\linewidth}%
     \else
-      \setlength{\my@item@len}{0.25\linewidth}%
+      \setlength{\rdxm@item@len}{0.25\linewidth}%
     \fi
-    \let\item=\my@item@box
+    \let\item=\rdxm@item@box
     \par\bgroup\BODY\hfill\egroup\par
   \fi
 }
 
-\newcommand\my@item@one@line{%
+\newcommand\rdxm@item@one@line{%
   \unskip
   \ifnumequal{\value{choice}}{0}{}{\hfill}
   \stepcounter{choice}(\Alph{choice})\ %
 }
-\newcommand\my@item@two@line{%
+\newcommand\rdxm@item@two@line{%
   \unskip
   \ifnumodd{\value{choice}}{&}{\unskip\cr}%
   \stepcounter{choice}(\Alph{choice})\ %
@@ -677,56 +685,55 @@
   \setlength{\parindent}{0pt}%
   \setlength{\parskip}{0pt}%
   \setcounter{choice}{0}%
-  \let\item=\my@item@one@line
-  \settowidth{\my@item@len}{\BODY}%
-  \ifdim\my@item@len<0.95\linewidth
+  \let\item=\rdxm@item@one@line
+  \settowidth{\rdxm@item@len}{\BODY}%
+  \ifdim\rdxm@item@len<0.95\linewidth
     \setcounter{choice}{0}%
     \par\bgroup\BODY\hfill\hfill\par\egroup\par
   \else
     \setcounter{choice}{0}%
-    \let\item=\my@item@two@line
-    \settowidth{\my@item@len}{\vbox{\halign{##&##\hfil\cr\BODY\crcr}}}%
-    \ifdim\my@item@len<0.975\linewidth
+    \let\item=\rdxm@item@two@line
+    \settowidth{\rdxm@item@len}{\vbox{\halign{##&##\hfil\cr\BODY\crcr}}}%
+    \ifdim\rdxm@item@len<0.975\linewidth
       \setcounter{choice}{0}%
       \par\bgroup\nointerlineskip
       \vbox{\halign to\linewidth{##\hfil\tabskip=0pt plus 1fil&##\hfil\cr\BODY\crcr}}%
       \egroup\par
     \else
       \setcounter{choice}{0}%
-      \let\item=\my@item@par
+      \let\item=\rdxm@item@par
       \par\bgroup\BODY\hfill\egroup\par
     \fi
   \fi
 }
 
 \ifbool{random}{%
-  \csdef{my@swap@items@1}#1#2#3#4{\item#3\item#4\item#1\item#2}
-  \csdef{my@swap@items@2}#1#2#3#4{\item#2\item#1\item#4\item#3}
-  \csdef{my@swap@items@3}#1#2#3#4{\item#4\item#3\item#2\item#1}
-  \long\def\my@swap@items#1\item#2\item#3\item#4\item#5\@my@stop@mark{%
-    #1\csuse{my@swap@items@\@my@choice@random}{#2}{#3}{#4}{#5}%
+  \csdef{rdxm@swap@items@1}#1#2#3#4{\item#3\item#4\item#1\item#2}
+  \csdef{rdxm@swap@items@2}#1#2#3#4{\item#2\item#1\item#4\item#3}
+  \csdef{rdxm@swap@items@3}#1#2#3#4{\item#4\item#3\item#2\item#1}
+  \long\def\rdxm@swap@items#1\item#2\item#3\item#4\item#5\@rdxm@stop@mark{%
+    #1\csuse{rdxm@swap@items@\@rdxm@choice@random}{#2}{#3}{#4}{#5}%
   }
 }{}
 
 \NewDocumentEnvironment{abcd}{+b}{%
   \ifbool{random}{%
-    \begin{abcdreal}\my@swap@items#1\@my@stop@mark\end{abcdreal}%
+    \begin{abcdreal}\rdxm@swap@items#1\@rdxm@stop@mark\end{abcdreal}%
   }{%
     \begin{abcdreal}#1\end{abcdreal}%
   }%
 }{}
 \NewDocumentEnvironment{abcd*}{+b}{%
   \ifbool{random}{%
-    \begin{abcd*real}\my@swap@items#1\@my@stop@mark\end{abcd*real}%
+    \begin{abcd*real}\rdxm@swap@items#1\@rdxm@stop@mark\end{abcd*real}%
   }{%
     \begin{abcd*real}#1\end{abcd*real}%
   }%
 }{}
 
 %% ---------------------------------------------------------------------------
-%% 设定有序列表使用悬挂缩进，并指定前两级有序列表的标签格式
-%% 标签宽度按最宽者自动设定，左边距自动计算，竖直空白全部去掉
-%% 最后的 itemjoin 设定行内有序列表 enumerate* 两项之间的空白
+%% Use hangindent in enumerate lists, and remove extra vertical space
+%% The itemjoin set space between items in inline enumerate* environment
 %% ---------------------------------------------------------------------------
 
 \setlist[enumerate]{labelindent=0pt,labelsep=0.2em,itemindent=0pt,leftmargin=*,nosep,itemjoin=\quad}
@@ -734,11 +741,7 @@
 \setlist[enumerate,2]{label=(\alph*),widest*=1}
 
 %% ---------------------------------------------------------------------------
-%% 自由对齐命令 \tabpoint, \tabto, \tableft
-%% 命令 \tabpoint 记录当前的水平位置，也可以简写为 \?
-%% 命令 \tabto 跳到之前记录的位置，也可以简写为 \+
-%% 命令 \tableft 跳到之前记录的位置的左侧，也可以简写为 \<
-%% 这些自由对齐命令需要编译两次才能生效
+%% Use freealign package to align math formulas in different lines
 %% ---------------------------------------------------------------------------
 
 \AtBeginDocument{%
@@ -746,7 +749,7 @@
 }
 
 %% ---------------------------------------------------------------------------
-%% 评分命令 \points
+%% Command for giving points in solutions: \points
 %% ---------------------------------------------------------------------------
 
 \PassOptionsToPackage{tbtags}{amsmath}
@@ -772,8 +775,7 @@
 }
 
 %% ---------------------------------------------------------------------------
-%% 统一行间公式和行内公式的巨算符和分式的尺寸
-%% 利用开头的 medmath 选项可以启用此部分设定
+%% Use medium-size fractions and operators in both inline and displayed formulas
 %% ---------------------------------------------------------------------------
 
 \AtBeginDocument{%
@@ -781,37 +783,7 @@
 }
 
 %% ---------------------------------------------------------------------------
-%% 在 tabular 和 array 等表格环境中添加列间距
-%% 避免单元格里出现的分式太过接近上面和下面行
-%% ---------------------------------------------------------------------------
-
-\newcommand{\my@do@cellspace}{%
-  \RequirePackage[math]{cellspace}%
-  \setlength\cellspacetoplimit{2pt}%
-  \setlength\cellspacebottomlimit{2pt}%
-  \addparagraphcolumntypes{X}%
-  \newcolumntype{0}[1]{>{\bcolumn ##1\@nil}##1<{\ecolumn}}%
-  \newcolumntype{5}[1]{>{$}0{##1}<{$}}%
-  % Fix cellspace bug before version 1.7
-  % See https://tex.stackexchange.com/a/385581
-  \@ifpackagelater{cellspace}{2017/08/12}{}{%
-    \patchcmd{\@endpbox}{\color@endgroup}{\expandafter\color@endgroup}{}{}%
-  }%
-  %% redefine cases environment fixed by medmath
-  \renewenvironment{cases}{%
-    \left\{\linespread{1.0}\selectfont\def\arraystretch{1.2}%
-    \begin{array}{@{}5l@{}>{\quad}5l@{}}%
-  }{%
-    \end{array}\right.%
-  }%
-}
-
-\AtBeginDocument{%
-  \ifcellspace \my@do@cellspace \fi
-}
-
-%% ---------------------------------------------------------------------------
-%% 载入常用宏包，定义常用命令
+%% Load more packages, define more commands
 %% ---------------------------------------------------------------------------
 
 \AtBeginDocument{
@@ -822,9 +794,6 @@
 }
 
 \setlength\arraycolsep{4pt}
-
-\RequirePackage{multirow}
-\RequirePackage{tabu}
 
 \RequirePackage{diagbox}
 %% 修正 \diagbox 在 array 环境中使用的问题
@@ -846,13 +815,10 @@
 \RequirePackage{mathtools} % \mathllap 命令，pmatrix* 环境等
 \RequirePackage{extarrows}
 
-\RequirePackage{relsize}
-\newcommand{\Int}{\mathop{\mathlarger{\int}}}
-
 \AtBeginDocument{%
-  \let\my@saved@lim=\lim    \def\lim{\my@saved@lim\limits}%
-  \let\my@saved@sum=\sum    \def\sum{\my@saved@sum\limits}%
-  \let\my@saved@prod=\prod  \def\prod{\my@saved@prod\limits}%
+  \let\rdxm@saved@lim=\lim    \def\lim{\rdxm@saved@lim\limits}%
+  \let\rdxm@saved@sum=\sum    \def\sum{\rdxm@saved@sum\limits}%
+  \let\rdxm@saved@prod=\prod  \def\prod{\rdxm@saved@prod\limits}%
 }
 
 \newcommand{\e}{\mathrm{e}}
@@ -951,21 +917,21 @@
 \AtBeginDocument{\@ifpackageloaded{fontspec}{%
     %\IfFileExists{STIX-Regular.otf}{% 在 TeXLive 中无效
     \IfFileExists{stix.sty}{%
-        \newfontfamily{\mystix}{STIX} % stix v1.1
+        \newfontfamily{\@rdxm@stix}{STIX} % stix v1.1
     }{%
-        \newfontfamily{\mystix}{STIXGeneral} % stix v1.0
+        \newfontfamily{\@rdxm@stix}{STIXGeneral} % stix v1.0
     }
     \newrobustcmd\leftwhitearrow{%
-      \mathrel{\text{\normalfont\mystix\symbol{"21E6}}}%
+      \mathrel{\text{\normalfont\@rdxm@stix\symbol{"21E6}}}%
     }
     \newrobustcmd\upwhitearrow{%
-      \mathrel{\text{\normalfont\mystix\symbol{"21E7}}}%
+      \mathrel{\text{\normalfont\@rdxm@stix\symbol{"21E7}}}%
     }
     \newrobustcmd\rightwhitearrow{%
-      \mathrel{\text{\normalfont\mystix\symbol{"21E8}}}%
+      \mathrel{\text{\normalfont\@rdxm@stix\symbol{"21E8}}}%
     }
     \newrobustcmd\downwhitearrow{%
-      \mathrel{\text{\normalfont\mystix\symbol{"21E9}}}%
+      \mathrel{\text{\normalfont\@rdxm@stix\symbol{"21E9}}}%
     }
 }{%
     \let \leftwhitearrow = \Leftarrow

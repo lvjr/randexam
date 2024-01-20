@@ -3,7 +3,7 @@
 \documentclass[12pt,plain,most]{randexam}
 \geometry{b5paper,margin=2cm}
 
-\newcommand*{\myversion}{2024A}
+\newcommand*{\myversion}{2024B}
 \newcommand*{\mydate}{\the\year-\mylpad\month-\mylpad\day}
 \newcommand*{\mylpad}[1]{\ifnum#1<10 0\the#1\else\the#1\fi}
 
@@ -44,6 +44,8 @@
 \NewDocumentCommand\mycmd{m}{\textcolor{green3}{\ttfamily\fakeverb{#1}}}
 \NewDocumentCommand\myenv{m}{\textcolor{green3}{\ttfamily#1}}
 \NewDocumentCommand\myfile{m}{\textcolor{purple3}{\mbox{#1}}}
+\NewDocumentCommand\mykey{m}{\textcolor{brown3}{\mbox{\fakeverb{#1}}}}
+\NewDocumentCommand\myval{m}{\textcolor{azure3}{\mbox{\fakeverb{#1}}}}
 
 \begin{document}
 
@@ -64,14 +66,16 @@
 \section{Introduction}
 
 Document class \mypkg{randexam} is an exam class for LaTeX.
-With this class you could easily make an exam (especially a math exam) and its randomized variants.
+With this class you could easily make an exam paper and its randomized variants.
+
+The class mainly focuses on making math exam papers, but you could use it to make other exam papers.
 
 The latest release of this package can be downloaded from here: \newline
 \textcolor{blue}{\href{https://ctan.org/pkg/randexam}{\ttfamily https://ctan.org/pkg/randexam}}.
 
-\section{Structure}
+\section{Basic Structure}
 
-\subsection{Basic structure}
+\subsection{A randexam document}
 
 The following is the basic structure of a \mypkg{randexam} document:
 \begin{code}
@@ -81,172 +85,275 @@ The following is the basic structure of a \mypkg{randexam} document:
 % document body
 \end{document}
 \end{code}
-In document preamble you could make some settings for the exam.
+In document preamble you could set some options for the exam.
 In document body you write the contents of the exam.
 
-\subsection{Exam settings}
+\subsection{Document preamble}
 
-In document preamble you could set the random seed,
-which is used when you add class option \myopt{random}:
+In document preamble you normally set some class options with \mycmd{\SetExamOption} command.
+For example, you could change the random seed with \myopt{seed} key. The seed is used only when
+you add class option \myopt{random} (see Subsection \ref{opt:random}):
 \begin{code}
-\setexam{
+\SetExamOption{
   seed = 19061116, % random seed
 }
 \end{code}
 
-\subsection{Exam body}
+\subsection{Document body}
 
-The problems in an exam could be separated into several groups:
+In document body you normally write an \mycmd{\examtitle},
+multiple \mycmd{\examgroup}, and an optional \mycmd{\examdata} commands:
 
 \begin{code}
-\documentclass{randexam}
-\begin{document}
+\examtitle{name=Math Final Exam,date=2018-06-28,version=A}
 ......
-\makehead % make exam title
-\gradetable
+\examgroup{Fill in the blanks.}{3 points for each.}
 ......
-\makepart{Fill in the blanks.}{3 points for each.}
+\examgroup{Select one answer.}{3 points for each.}
 ......
-\makepart{Select one answer.}{3 points for each.}
+\examgroup{Work out math calculations.}{8 points for each.}
 ......
-\makepart{Work out math calculations.}{8 points for each.}
+\examdata{Some data may be used in the exam}
 ......
-\makepart{Work out math proofs.}{8 points for each.}
-......
-\makedata{Some data may be used in the exam}
-......
-\end{document}
 \end{code}
 
 \subsection{Exam title}
 
-Before calling \mycmd{\makehead} command,
-you need to provide some informations of the exam:
+In calling \mycmd{\examtitle} command,
+you need to provide some basic informations of the exam:
 
 \begin{code}
-\renewcommand{\examtitle}{Math 1906 Final Exam}
-\renewcommand{\examdate}{2018-06-28}
-\renewcommand{\examvariant}{A}
-\makehead % make exam title
+\examtitle{name=Math Final Exam,date=2018-06-28,version=A}
 \end{code}
 
-\subsection{True-or-false problems}
+If the \mykey{date} key is missing, it has the default value \myval{\today}.
+When class option \myopt{random} is passed, the value of \mykey{version} key
+will be modified from \myval{A} to \myval{B}.
+
+\subsection{Exam groups}
+
+The questions in an exam could be separated into several groups:
 
 \begin{code}
-\makepart{True-or-false problems}{3 points for each.}
-
-\begin{problem}
-The first true-or-false problem. \tickout{T}
-\end{problem}
-
-\begin{problem}
-The second true-or-false problem. \tickout{F}
-\end{problem}
+\examgroup{Fill in the blanks.}{3 points for each.}
+......
+\examgroup{Select one answer.}{3 points for each.}
+......
+\examgroup{Work out math calculations.}{8 points for each.}
+......
 \end{code}
 
-\begin{problem}
-The first true-or-false problem. \tickout{T}
-\end{problem}
+\subsection{Exam data}
 
-\begin{problem}
-The second true-or-false problem. \tickout{F}
-\end{problem}
+At the end of the exam, you could add some appendix data with \mycmd{\examdata} command:
+
+\begin{code}
+\examdata{Some data may be used in the exam}
+......
+\end{code}
+
+You must put appendix data after \mycmd{\examdata} command,
+or the exam variants will be incorrect.
+
+\section{Types of questions}
+
+\subsection{True-or-false questions}
+
+\begin{code}
+\examgroup{True-or-false questions}{3 points for each.}
+
+\begin{question}
+The first true-or-false question. \tickout{T}
+\end{question}
+
+\begin{question}
+The second true-or-false question. \tickout{F}
+\end{question}
+\end{code}
+
+\begin{question}
+The first true-or-false question. \tickout{T}
+\end{question}
+
+\begin{question}
+The second true-or-false question. \tickout{F}
+\end{question}
 
 With \mycmd{\tickout{T}} and \mycmd{\tickout{F}}, you get \textcolor{blue}{\textsf{T}}
 and \textcolor{blue}{\textsf{F}}; with \mycmd{\tickout{t}} and \mycmd{\tickout{f}},
 you get \textcolor{blue}{$\checkmark$} and \textcolor{blue}{\large$\times$}.
 
 You must put answers inside \mycmd{\tickout} command,
-so that \mypkg{randexam} could hide them in generating empty exam.
+so as to make \mypkg{randexam} hide them in generating blank exam papers.
 
-\subsection{Fill-in-the-blank problems}
+\subsection{Fill-in-the-blank questions}
 
 \begin{code}
-\makepart{Fill in the blanks.}{3 points for each.}
+\examgroup{Fill in the blanks.}{3 points for each.}
 
-\begin{problem}
-The first fill-in-the-blank problem \fillout{answer}.
-\end{problem}
+\begin{question}
+The first fill-in-the-blank question \fillout{answer}.
+\end{question}
 
-\begin{problem}
-The second fill-in-the-blank problem \fillout{answer}.
-\end{problem}
+\begin{question}
+The second fill-in-the-blank question \fillout{answer}.
+\end{question}
 \end{code}
 
-\begin{problem}
-The first fill-in-the-blank problem \fillout{answer}.
-\end{problem}
+\begin{question}
+The first fill-in-the-blank question \fillout{answer}.
+\end{question}
 
-\begin{problem}
-The second fill-in-the-blank problem \fillout{answer}.
-\end{problem}
+\begin{question}
+The second fill-in-the-blank question \fillout{answer}.
+\end{question}
 
 With \mycmd{\fillout} command, the underline will fill the whole line;
 with \mycmd{\fillin} command, the underline will be minimal.
 
 You must put answers inside \mycmd{\fillout} or \mycmd{\fillin} command,
-so that \mypkg{randexam} could hide them in generating empty exam.
+so as to make \mypkg{randexam} hide them in generating blank exam papers.
 
-\subsection{Multiple-choice problems}
+\subsection{Multiple-choice questions}
 
 \begin{code}
-\makepart{Select one answer.}{3 points for each.}
+\examgroup{Select one answer.}{3 points for each.}
 
-\begin{problem}
-The first multiple-choice problems \pickout{A}.
+\begin{question}
+The first multiple-choice questions \pickout{A}.
 \begin{abcd}
   \item First
   \item Second
   \item Third
   \item Fourth
 \end{abcd}
-\end{problem}
+\end{question}
 
-\begin{problem}
-The second multiple-choice problems \pickout{C}.
+\begin{question}
+The second multiple-choice questions \pickout{C}.
 \begin{abcd}
   \item First choice
   \item Second choice
   \item Third choice
   \item Fourth choice
 \end{abcd}
-\end{problem}
+\end{question}
 \end{code}
 
-\begin{problem}
-The first multiple-choice problems \pickout{A}.
+\begin{question}
+The first multiple-choice questions \pickout{A}.
 \begin{abcd}
   \item First
   \item Second
   \item Third
   \item Fourth
 \end{abcd}
-\end{problem}
+\end{question}
 
-\begin{problem}
-The second multiple-choice problems \pickout{C}.
+\begin{question}
+The second multiple-choice questions \pickout{C}.
 \begin{abcd}
   \item First choice
   \item Second choice
   \item Third choice
   \item Fourth choice
 \end{abcd}
-\end{problem}
+\end{question}
 
 With \mycmd{\pickout} command, the answer will be printed on the right edge of the line;
 with \mycmd{\pickin} command, the answer will be printed on current position.
 
 You must put answers inside \mycmd{\pickout} or \mycmd{\pickin} command,
-so that \mypkg{randexam} could hide them in generating empty exam.
+so as to make \mypkg{randexam} hide them in generating blank exam papers.
 
-The four choices of multiple-choice problems could be typeset with \myenv{abcd} environment.
+The four choices of multiple-choice questions could be typeset with \myenv{abcd} environment.
 And \myenv{abcd} environment will put them in one, two, or four rows
 according to the lengths of the choices.
 
+\subsection{Subjective questions}
+
+For subjective questions, you could put answers inside \myenv{solution} environment.
+
+\begin{code}
+\examgroup{Work out math calculations.}{8 points for each.}
+
+\begin{question}
+The first math calculation question.
+\end{question}
+
+\begin{solution}
+Answer to the first question.
+\end{solution}
+
+\begin{question}
+The second math calculation question.
+\end{question}
+
+\begin{solution}
+Answer to the second question.
+\end{solution}
+\end{code}
+
+\begin{question}
+The first math calculation question.
+\end{question}
+
+\begin{solution}
+Answer to the first question.
+\end{solution}
+
+\begin{question}
+The second math calculation question.
+\end{question}
+
+\begin{solution}
+Answer to the second question.
+\end{solution}
+
+\subsection{Other questions}
+
+You can write other types of questions. For example:
+
+\begin{code}
+\examgroup{Some question type}{4 points for each.}
+
+\begin{question}
+First question text. \answer{Answer text.}
+\end{question}
+
+\begin{question}
+Second question text. \answer{Answer text.}
+\end{question}
+\end{code}
+
+\begin{question}
+First question text. \answer{Answer text.}
+\end{question}
+
+\begin{question}
+Second question text. \answer{Answer text.}
+\end{question}
+
+You must put answer text inside \mycmd{\answer} command,
+so as to make \mypkg{randexam} hide them in generating blank exam papers.
+
+\section{Other components}
+
+\subsection{Grade tables}
+
+Normally you need a grade table after exam title.
+You can get it by using \mycmd{\gradetable} command.
+
+\begin{code}
+\gradetable
+\end{code}
+
+\gradetable
+
 \subsection{Answer tables}
 
-Before true-or-false, fill-in-the-blank, or multiple-choice problems,
-you may use \mycmd{\answertable} to generate an empty answer table:
+Before true-or-false, fill-in-the-blank, or multiple-choice questions,
+you may use \mycmd{\answertable} to generate an blank answer table:
 
 \begin{code}
 \answertable[3em]{6}{3}
@@ -256,78 +363,52 @@ you may use \mycmd{\answertable} to generate an empty answer table:
 
 The meanings of the three arguments of \verb!\answertable! commands are as follows:
 \begin{itemize}
-  \item The first one means the strut height of the cells; its default value is \verb!1em!.
-  \item The second one means the total number of problems in this exam group.
-  \item The third one means the number of problems in each row.
+  \item The first one means the strut height of the answer rows; its default value is \verb!1em!.
+  \item The second one means the total number of questions in this exam group.
+  \item The third one means the number of questions in each row.
 \end{itemize}
 
-\subsection{Calculation problems}
+\subsection{Vertical space}
+
+You could leave some vertical space after a \myenv{question} or \myenv{solution} environment.
+At this time \mypkg{randexam} class supports the following commands for adding vertical space:\par
+
+\renewcommand{\arraystretch}{1.3}%
+\begin{tabularx}{\linewidth}{l<{\qquad}X}
+  \hline
+  \texttt{\string\smallskip} & Add small vertical space\\
+  \hline
+  \texttt{\string\medskip}   & Add medium vertical space\\
+  \hline
+  \texttt{\string\bigskip}   & Add big vertical space\\
+  \hline
+  \texttt{\string\vfill}     & Fill vertical space available\\
+  \hline
+\end{tabularx}\par
+
+Of course, you could use multiple commands in the above tables.
+
+In the exam body, you could use \mycmd{\newpage} to make a page break,
+but you should \underline{NOT} use other page breaking commands, such as \mycmd{\clearpage},
+or the exam variants may be wrong.
+
+\section{Writing questions}
+
+\subsection{points key}
+
+The \myenv{question} environment accepts a \mykey{points} key:
 
 \begin{code}
-\makepart{Work out math calculations.}{8 points for each.}
-
-\begin{problem}
-The first math calculation problem.
-\end{problem}
-\begin{solution}
-Answer to the first problem.
-\end{solution}
-
-\begin{problem}
-The second math calculation problem.
-\end{problem}
-\begin{solution}
-Answer to the second problem.
-\end{solution}
+\begin{question}[points=4]
+This is a question.
+\end{question}
 \end{code}
 
-\begin{problem}
-The first math calculation problem.
-\end{problem}
-\begin{solution}
-Answer to the first problem.
-\end{solution}
+\begin{question}[points=4]
+This is a question.
+\end{question}
 
-\begin{problem}
-The second math calculation problem.
-\end{problem}
-\begin{solution}
-Answer to the second problem.
-\end{solution}
-
-\subsection{Proof problems}
-
-\begin{code}
-\makepart{Work out math proofs.}{8 points for each.}
-
-\begin{problem}
-The first math proof problem.
-\end{problem}
-\begin{solution}
-Answer to the first problem.
-\end{solution}
-
-\begin{problem}
-The second math proof problem.
-\end{problem}
-\begin{solution}
-Answer to the second problem.
-\end{solution}
-\end{code}
-
-\begin{problem}
-The first math proof problem.
-\end{problem}
-\begin{solution}
-Answer to the first problem.
-\end{solution}
-
-\begin{problem}
-The second math proof problem.
-\end{problem}
-\begin{solution}
-Answer to the second problem.
-\end{solution}
+\section{Writing solutions}
 
 \subsection{Solution name}
 
@@ -398,76 +479,13 @@ of previously saved position by the width of $=$.
 Because \mypkg{freealign} package uses \mypkg{zref} package to save positions,
 you need two compilations to get correct results.
 
-\subsection{Other problems}
+\section{Class options}
 
-You can write other types of problems. For example:
-
-\begin{code}
-\makepart{Some problem type}{4 points for each.}
-
-\begin{problem}
-First problem text. \answer{Answer text.}
-\end{problem}
-
-\begin{problem}
-Second problem text. \answer{Answer text.}
-\end{problem}
-\end{code}
-
-\begin{problem}
-First problem text. \answer{Answer text.}
-\end{problem}
-
-\begin{problem}
-Second problem text. \answer{Answer text.}
-\end{problem}
-
-You must put answer text inside \mycmd{\answer} command,
-so that \mypkg{randexam} could hide them in generating empty exam.
-
-\subsection{Appendix data}
-
-At the end of the exam, you could add appendix data with \mycmd{\makedata} command:
-
-\begin{code}
-\makedata{Some data may be used in the exam}
-......
-\end{code}
-
-You must put appendix data after \mycmd{\makedata} command,
-or the exam variants will be incorrect.
-
-\subsection{Vertical space}
-
-You could leave some vertical space after a \myenv{problem} or \myenv{solution} environment.
-At this time \mypkg{randexam} class supports the following commands for adding vertical space:\par
-
-\renewcommand{\arraystretch}{1.3}%
-\begin{tabularx}{\linewidth}{l<{\qquad}X}
-  \hline
-  \texttt{\string\smallskip} & Add small vertical space\\
-  \hline
-  \texttt{\string\medskip}   & Add medium vertical space\\
-  \hline
-  \texttt{\string\bigskip}   & Add big vertical space\\
-  \hline
-  \texttt{\string\vfill}     & Fill vertical space available\\
-  \hline
-\end{tabularx}\par
-
-Of course, you could use multiple commands in the above tables.
-
-In the exam body, you could use \mycmd{\newpage} to make a page break,
-but you should \underline{NOT} use other page breaking commands, such as \mycmd{\clearpage},
-or the exam variants may be wrong.
-
-\section{Options}
-
-\subsection{Empty exam paper}
+\subsection{Blank exam papers}
 
 Assume \myfile{exam-a-answer.tex} is an exam paper with answers.
-You can easily get an empty exam paper with answers removed,
-by creating an \myfile{exam-a-empty.tex} file with the following lines:
+You can easily get an blank exam paper with answers removed,
+by creating an \myfile{exam-a-blank.tex} file with the following lines:
 
 \begin{code}
 \PassOptionsToClass{noanswer}{randexam}
@@ -477,10 +495,10 @@ by creating an \myfile{exam-a-empty.tex} file with the following lines:
 That is to say, when adding \myopt{noanswer} option to \mypkg{randexam} class,
 The answers will be hidden in the compiled exam paper.
 
-\subsection{Randomized variants}
+\subsection{Randomized variants}\label{opt:random}
 
 Assume \myfile{exam-a-answer.tex} is an exam paper.
-You can get an randomized variant with all problems in the same group shuffled,
+You can get an randomized variant with all questions in the same group shuffled,
 by creating an \myfile{exam-b-answer.tex} file with the following lines:
 
 \begin{code}
@@ -489,31 +507,31 @@ by creating an \myfile{exam-b-answer.tex} file with the following lines:
 \end{code}
 
 That is to say, when adding \myopt{random} option to \mypkg{randexam} class,
-The problems in the same group will be shuffled in the compiled exam paper.
+The questions in the same group will be shuffled in the compiled exam paper.
 Furthermore, four choices in an \myenv{abcd} environment will be shuffled too.
 
-\subsection{Two column exam}
+\subsection{Two column exam papers}
 
-Assume \myfile{exam-a-empty.tex} is the TeX file of an exam paper of A4 size.
+Assume \myfile{exam-a-blank.tex} is the TeX file of an exam paper of A4 size.
 You could get an exam paper of A3 size,
 by creating a new TeX file with the following lines:
 
 \begin{code}
 \PassOptionsToClass{a3paper}{randexam}
-\input{exam-a-empty}
+\input{exam-a-blank}
 \end{code}
 
 That is to say, when adding \myopt{a3paper} option to \mypkg{randexam} class,
 The result paper will be a two column document in A3 size.
 
-Assume \myfile{exam-a-empty.pdf} is the PDF file of an exam paper of A4 size.
+Assume \myfile{exam-a-blank.pdf} is the PDF file of an exam paper of A4 size.
 You could get an exam paper of A3 size,
 by creating a new TeX file with the following lines:
 \begin{code}
 
 \documentclass[a3input]{randexam}
 \begin{document}
-\includepdf[pages=-,nup=2x1]{exam-a-empty}
+\includepdf[pages=-,nup=2x1]{exam-a-blank}
 \end{document}
 \end{code}
 
