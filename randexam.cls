@@ -5,9 +5,9 @@
 % ----------------------------------------------------------------------------
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{randexam}[2024-01-20 v2024B Make an exam paper and its randomized variants]
+\ProvidesClass{randexam}[2024-01-28 v2024C Make an exam paper and its randomized variants]
 
-%% Old LaTeX release could not recongnize date format like 2022-11-01
+%% Old LaTeX release could not recognize date format like 2022-11-01
 %\@ifl@t@r\fmtversion{2022-11-01}{}{
 \@ifl@t@r\fmtversion{2022/11/01}{}{
   \ClassError{randexam}{%
@@ -15,6 +15,9 @@
     We need CTeX 3.0+ or MiKTeX 2023+ or TeXLive 2023+%
   }{Please update your TeX distribution first.}
 }
+
+\RequirePackage{functional}
+\IgnoreSpacesOn
 
 \RequirePackage{etoolbox}
 
@@ -27,7 +30,7 @@
 \newbool{amsfonts}    \boolfalse{amsfonts}   % use ams fonts
 \newbool{freealign}   \boolfalse{freealign}  % load freealign package
 \newbool{medmath}     \boolfalse{medmath}    % use medium-size formulas
-\newbool{grader}      \boolfalse{grader}     % add grader line in the grade table
+\newbool{evaluator}   \boolfalse{evaluator}  % add evaluator line in the grade table
 
 \DeclareKeys{
   plain     .if    = plain,
@@ -39,7 +42,7 @@
   amsfonts  .if    = amsfonts,
   freealign .if    = freealign,
   medmath   .if    = medmath,
-  grader    .if    = grader,
+  evaluator .if    = evaluator,
   many      .code  = \booltrue{freealign},
   most      .code  = \booltrue{freealign}\booltrue{medmath}
 }
@@ -66,7 +69,6 @@
 \RequirePackage{zref-user,zref-lastpage}
 \RequirePackage{tabularx}
 \RequirePackage{xcolor}
-\RequirePackage{xkeyval}
 
 \ifplain
   \allowdisplaybreaks[4]
@@ -91,6 +93,103 @@
 \NewDocumentCommand\SetExamOption{+m}{\SetKeys[randexam]{#1}}
 
 %% ---------------------------------------------------------------------------
+%% Template commands for exam elements
+%% ---------------------------------------------------------------------------
+
+%% #1: exam element; #2: template name; #3: template code
+%% If the template name = default, we enable the template at once
+%% Otherwise, we may enable the template by using \SelectExamTemplate command
+\NewDocumentCommand\DeclareExamTemplate{mm+m}{
+  \tlSet{\expName{l@rdxm@template@#1@#2@tl}}{#3}
+  \ignorespaces
+}
+
+%% #1: exam element; #2: template name
+\NewDocumentCommand\SelectExamTemplate{mm}{
+  \tlSetEq{\expName{l@rdxm@template@#1@default@tl}}{\expName{l@rdxm@template@#1@#2@tl}}
+  \ignorespaces
+}
+
+%% #1: exam element; #2: template name.
+%% In an expandable command, we should use \UseName but not \expName.
+\NewExpandableDocumentCommand\UseExamTemplate{mm}{
+  \UseName{l@rdxm@template@#1@#2@tl}
+}
+
+%% ---------------------------------------------------------------------------
+%% Translation commands for exam keywords
+%% ---------------------------------------------------------------------------
+
+\tlSet\l@rdxm@current@language@tl{english}
+
+\DeclareUnknownKeyHandler[randexam-translation]{
+  \tlSet{\expName{l@rdxm@translate@\l@rdxm@declare@language@tl @#1@tl}}{#2}
+}
+
+%% #1: language name; #2: a keyval list with keyword = transaltion format
+\NewDocumentCommand\DeclareExamTranslation{mm}{
+  \tlIfEqTF{#1}{current}{
+    \tlSetEq\l@rdxm@declare@language@tl\l@rdxm@current@language@tl
+  }{
+    \tlSet\l@rdxm@declare@language@tl{#1}
+  }
+  \SetKeys[randexam-translation]{#2}
+  \ignorespaces
+}
+
+%% #1: language name
+\NewDocumentCommand\SelectExamTranslation{m}{
+  \tlSet\l@rdxm@current@language@tl{#1}
+  \ignorespaces
+}
+
+%% #1: keyword name.
+%% In an expandable command, we should use \UseName but not \expName.
+\NewExpandableDocumentCommand\UseExamTranslation{m}{
+  \UseName{l@rdxm@translate@\l@rdxm@current@language@tl @#1@tl}
+}
+
+\DeclareExamTranslation{english}{
+   answertable-Answer   = Answer
+  ,answertable-Number   = Number
+  ,examdata-Appendix    = Appendix
+  ,exampart-Part        = Part
+  ,examtitle-Name       = Name
+  ,examtitle-Solutions  = Solutions
+  ,gradetable-Evaluator = Evaluator
+  ,gradetable-Part      = Part
+  ,gradetable-Score     = Score
+  ,gradetable-Total     = Total
+  ,headfoot-Name        = Name
+  ,headfoot-of          = of
+  ,headfoot-Page        = Page
+  ,headfoot-Solutions   = Solutions
+  ,headfoot-Version     = Version
+  ,points-point         = point
+  ,points-points        = points
+  ,question-Question    = Question
+  ,solution-Solution    = Solution
+}
+
+\SelectExamTranslation{english}
+
+%% ---------------------------------------------------------------------------
+%% Keyvalue commands for exam options
+%% ---------------------------------------------------------------------------
+
+%% #1 module name; #2: key name; #3: its value
+\NewDocumentCommand\DeclareExamValue{mm+m}{
+  \tlSet{\expName{l@rdxm@value@#1@#2@tl}}{#3}
+  \ignorespaces
+}
+
+%% #1: module name; #2: key name.
+%% In an expandable command, we should use \UseName but not \expName.
+\NewExpandableDocumentCommand\UseExamValue{mm}{
+  \UseName{l@rdxm@value@#1@#2@tl}
+}
+
+%% ---------------------------------------------------------------------------
 %% Command for exam title: \examtitle
 %% ---------------------------------------------------------------------------
 
@@ -101,75 +200,119 @@
 \newcommand{\ischeck}[1]{\ifnum#1>0\,$\checkmark$\,\else\quad\fi}
 \newcommand{\isquad}[1]{\ifnum#1=0\,$\checkmark$\,\else\quad\fi}
 
-\def\rdxm@temp@a{A}
-\def\rdxm@temp@c{C}
-\def\rdxm@empty{}
-
 \DeclareKeys[randexam-title]{
-  name    .store = \@rdxm@title@name,
-  date    .store = \@rdxm@title@date,
-  version .store = \@rdxm@title@version
+   name    .code = \DeclareExamValue{examtitle}{name}{#1}
+  ,date    .code = \DeclareExamValue{examtitle}{date}{#1}
+  ,version .code = \DeclareExamValue{examtitle}{version}{#1}
 }
 
 \NewDocumentCommand\SetExamTitle{+m}{\SetKeys[randexam-title]{#1}}
 
-\SetExamTitle{name=Math 1906,date=\today,version=A}
+\SetExamTitle{name=Math~1906,date=\today,version=A}
 
-\newcommand\examtitle[1]{%
-  \SetExamTitle{#1}%
-  \thispagestyle{plain}
-  \ifbool{random}{%
-    \ifx\@rdxm@title@version\rdxm@temp@a\def\@rdxm@title@version{B}\fi
-    \ifx\@rdxm@title@version\rdxm@temp@c\def\@rdxm@title@version{D}\fi
-  }{}%
+\DeclareExamTemplate{examtitle}{normal}{
   \begingroup
   \Large\noindent
-  \ifbool{answer}{%
-    \textcolor{red!80!black}{\@rdxm@title@name\hfill Solutions}%
-  }{%
-    \@rdxm@title@name\hfill Name:\underspace{6em}%
+  \ifbool{answer}{
+    \textcolor{red!80!black}{
+      \UseExamValue{examtitle}{name}\hfill\UseExamTranslation{examtitle-Solutions}
+    }
+  }{
+    \UseExamValue{examtitle}{name}\hfill\UseExamTranslation{examtitle-Name}:\underspace{6em}
   }\par
   \endgroup
+}
+\SelectExamTemplate{examtitle}{normal}
+
+\NewDocumentCommand\examtitle{+m}{
+  \SetExamTitle{#1}
+  \thispagestyle{plain}
+  \ifbool{random}{
+    \tlIfEqT{\expWhole{\UseExamValue{examtitle}{version}}}{A}{
+      \DeclareExamValue{examtitle}{version}{B}
+    }
+    \tlIfEqT{\expWhole{\UseExamValue{examtitle}{version}}}{C}{
+      \DeclareExamValue{examtitle}{version}{D}
+    }
+  }{}
+  \UseExamTemplate{examtitle}{default}
 }
 
 %% ---------------------------------------------------------------------------
 %% Command for grade table: \gradetable
 %% ---------------------------------------------------------------------------
 
-%% You need to put .code:n before .initial:n
-\DeclareKeys[randexam]{%
-  groupnumber .code:n    = \let\exam@group@number#1,
-  groupnumber .initial:n = \Roman,
+%% total: total number of parts in current exam;
+%% strut: strut height in the score row.
+\DeclareKeys[randexam-gradetable]{
+   total  .code      = \DeclareExamValue{gradetable}{total}{#1}
+  ,total  .initial:n = 6
+  ,strut  .code      = \DeclareExamValue{gradetable}{strut}{#1}
+  ,strut  .initial:n = 2.5em
 }
 
 \newcounter{@exam@grade@cnt}
-\newcommand\rdxm@group@number[1]{%
-  \stepcounter{@exam@grade@cnt}%
-  \exam@group@number{@exam@grade@cnt}%
+\newrobustcmd\rdxm@part@number[1]{
+  \setcounter{@exam@grade@cnt}{#1}
+  \exam@part@number{@exam@grade@cnt}
 }
 
-\newcommand\insertgroupname{Part}
-\newcommand\insertscorename{Score}
-\newcommand\insertgradername{Grader}
-\newcommand\inserttotalname{Total}
+%% #1: the tl variable; #2: the first cell; #3: the last cell
+%% #4: the number of middle cells; #5: the map command for middle cells.
+\newrobustcmd\rdxm@table@make@row[5]{
+  \tlSet#1{#2 & }
+  \intStepOneInline{1}{#4}{
+    \tlPutRight#1{#5{##1} &}
+  }
+  \tlPutRight#1{ #3}
+}
 
-\newcommand\gradetable{%
-  \par\vspace{1em}%
-  \setcounter{@exam@grade@cnt}{0}%
-  \noindent\begin{tabularx}{\linewidth}{|*{8}{Y|}}
+\newrobustcmd\rdxm@gobble@one[1]{}
+
+%% \dimeval or \dimexpr doesn't accept decimal numbers such as 0.3
+\NewDocumentCommand\MakeExamStruct{m}{
+  \rule[-\dimeval{(#1)*3/10}]{0pt}{#1}
+}
+
+\DeclareExamTemplate{gradetable}{normal}{
+  \rdxm@table@make@row
+    \l@rdxm@gradetable@part@tl
+    {\textbf{\UseExamTranslation{gradetable-Part}}}
+    {\UseExamTranslation{gradetable-Total}}
+    {\UseExamValue{gradetable}{total}}
+    \rdxm@part@number
+  \rdxm@table@make@row
+    \l@rdxm@gradetable@score@tl
+    {\textbf{\UseExamTranslation{gradetable-Score}}
+         \MakeExamStruct{\UseExamValue{gradetable}{strut}}}
+    {}
+    {\UseExamValue{gradetable}{total}}
+    \rdxm@gobble@one
+  \ifbool{evaluator}{
+    \rdxm@table@make@row
+      \l@rdxm@gradetable@evaluator@tl
+      {\textbf{\UseExamTranslation{gradetable-Evaluator}}
+           \MakeExamStruct{\UseExamValue{gradetable}{strut}}}
+      {}
+      {\UseExamValue{gradetable}{total}}
+      \rdxm@gobble@one
+  }{}
+  \noindent
+  \begin{tabularx}{\linewidth}{|c|*{\UseExamValue{gradetable}{total}}{Y|}Y|}
     \hline
-    \textbf{\insertgroupname}
-      & \rdxm@group@number{1} & \rdxm@group@number{2} & \rdxm@group@number{3}
-      & \rdxm@group@number{4} & \rdxm@group@number{5} & \rdxm@group@number{6}
-      & \inserttotalname\\
-    \hline
-    \textbf{\insertscorename}\rule[-0.75em]{0pt}{2.5em} &  &  &  &  &  &  & \\
-    \hline
-    \ifbool{grader}{
-      \textbf{\insertgradername}\rule[-0.75em]{0pt}{2.5em} &  &  &  &  &  &  & \\
-      \hline
-    }{}
+    \l@rdxm@gradetable@part@tl \\ \hline
+    \l@rdxm@gradetable@score@tl \\ \hline
+    \ifbool{evaluator}{\l@rdxm@gradetable@evaluator@tl \\ \hline}{}
   \end{tabularx}
+}
+\SelectExamTemplate{gradetable}{normal}
+
+\NewDocumentCommand\gradetable{O{}}{
+  \par\vspace{1em}
+  \begingroup
+  \SetKeys[randexam-gradetable]{#1}
+  \UseExamTemplate{gradetable}{default}
+  \endgroup
 }
 
 %% ---------------------------------------------------------------------------
@@ -177,12 +320,23 @@
 %% ---------------------------------------------------------------------------
 
 \newcommand{\rdxm@columnbox}[1]{\makebox[\columnwidth]{#1}}
-\newcommand{\rdxm@headleft}{\@rdxm@title@name}
-\newcommand{\rdxm@headright}{\ifbool{answer}{Solutions}{Name:\hspace{12em}}}
+\newcommand{\rdxm@headleft}{\UseExamValue{examtitle}{name}}
+\newcommand{\rdxm@headright}{
+  \ifbool{answer}{
+    \UseExamTranslation{headfoot-Solutions}
+  }{
+    \UseExamTranslation{headfoot-Name}:\hspace{12em}
+  }
+}
 \newcommand{\rdxm@headtext}{\rdxm@headleft\hfill\rdxm@headright}
-\newcommand{\rdxm@footleft}{\@rdxm@title@date}
-\newcommand{\rdxm@footcenter}{Page~\thepage~of~\zpageref{LastPage}}
-\newcommand{\rdxm@footright}{Version \@rdxm@title@version}
+\newcommand{\rdxm@footleft}{\UseExamValue{examtitle}{date}}
+\newcommand{\rdxm@footcenter}{
+  \UseExamTranslation{headfoot-Page}~\thepage\space
+  \UseExamTranslation{headfoot-of}~\zpageref{LastPage}
+}
+\newcommand{\rdxm@footright}{
+  \UseExamTranslation{headfoot-Version}~\UseExamValue{examtitle}{version}
+}
 \newcommand{\rdxm@foottext}{\rdxm@footleft\hfill\rdxm@footcenter\hfill\rdxm@footright}
 
 % fancy page style
@@ -235,7 +389,7 @@
   \RequirePackage{pgffor}
   \newcommand*\exam@set@seed{%
     %% 当\pgfmathrandom的参数为3的倍数时，对相邻种子生成的多个随机数分布不均匀
-    %\pgfmathsetseed{\numexpr\rdxm@random@seed+\value{rdxm@group}-1\relax}%
+    %\pgfmathsetseed{\numexpr\rdxm@random@seed+\value{rdxm@part}-1\relax}%
     %% 因此我们改用下面的方法，用随机数种子生成下一个随机数种子
     \pgfmathsetseed{\rdxm@random@seed}%
     \pgfmathrandominteger\rdxm@random@seed{1}{2147483647}%
@@ -243,11 +397,17 @@
 \fi
 
 %% ---------------------------------------------------------------------------
-%% Command for exam groups: \examgroup
+%% Command for exam groups: \exampart
 %% Command for appendix data: \examdata
 %% Environment for questions: question
 %% Environment for solutions: solution
 %% ---------------------------------------------------------------------------
+
+%% You need to put .code before .initial:n
+\DeclareKeys[randexam-exampart]{%
+  partnumber .code      = \let\exam@part@number#1,
+  partnumber .initial:n = \Roman,
+}
 
 \newif\ifonlyonequestion \onlyonequestionfalse % 此部分仅有一道题时不显示题目编号
 \xdef\allquestions{}
@@ -255,13 +415,13 @@
 \newcounter{question}        % 当前题型的小题编号
 \newcounter{questionreal}    % 实际显示的小题编号，在各题型小题统一编号时使用
 \newcounter{totalquestions}  % 之前各题型小题总数，在各题型小题统一编号时使用
-\newcommand{\solutionname}{Solution}
+
 \newcounter{choice} % 后面选择题的 abcd 环境要用到
 \newcommand{\hangtext}{}
 \newlength{\hanglength}
-\colorlet{group number}{black}
-\colorlet{question number}{blue!80!black}
-\colorlet{solution name}{blue!80!black}
+\colorlet{part~number}{black}
+\colorlet{question~number}{blue!80!black}
+\colorlet{solution~name}{blue!80!black}
 
 \newcounter{rdxm@shuffle@temp@cnt}
 \newcounter{rdxm@list@temp@cnt}
@@ -337,19 +497,29 @@
   \xdef\lastquestion{}%
 }
 
-\newcounter{rdxm@group}
+\newcounter{rdxm@part}
 
-\newcommand\insertgroup[2]{%
-  \noindent\textbf{\textcolor{group number}{Part~\Roman{rdxm@group}}: #1} (#2)%
+\DeclareExamTemplate{exampart}{normal}{
+  \noindent
+  \textbf{
+    \textcolor{part~number}{\UseExamTranslation{exampart-Part}~\Roman{rdxm@part}}
+    :~\UseExamValue{exampart}{type}
+  }
+  \space(\UseExamValue{exampart}{points})
 }
+\SelectExamTemplate{exampart}{normal}
 
-\newcommand{\examgroup}[2]{%
+\newcommand{\exampart}[2]{
   \printquestions
-  \setcounter{totalquestions}{\value{totalquestions}+\value{question}}%
-  \setcounter{question}{0}%
-  \stepcounter{rdxm@group}%
-  \vspace{1em}%
-  \insertgroup{#1}{#2}%
+  \setcounter{totalquestions}{\value{totalquestions}+\value{question}}
+  \setcounter{question}{0}
+  \stepcounter{rdxm@part}
+  \vspace{1em}
+  \begingroup
+  \DeclareExamValue{exampart}{type}{#1}
+  \DeclareExamValue{exampart}{points}{#2}
+  \UseExamTemplate{exampart}{default}
+  \endgroup
   \par\nopagebreak
   \if\relax\detokenize{#1}\relax % #1 is empty
     \onlyonequestiontrue
@@ -361,57 +531,96 @@
   \@afterheading
 }
 
-\renewcommand\appendixname{Appendix}
-\newcommand{\examdata}[1]{%
+\DeclareExamTemplate{examdata}{normal}{
+  \centerline{
+    \textbf{\UseExamTranslation{examdata-Appendix}}
+    \quad\UseExamValue{examdata}{caption}
+  }
+  \smallskip
+}
+\SelectExamTemplate{examdata}{normal}
+
+\NewDocumentCommand\examdata{+m}{
   \printquestions\rdxm@stop@random
-  \centerline{\textbf{\appendixname}\quad #1}\smallskip
+  \DeclareExamValue{examdata}{caption}{#1}
+  \UseExamTemplate{examdata}{default}
 }
 
 \preto{\@enddocumenthook}{\printquestions\rdxm@stop@random}
 
 \newcommand\ignorepars{\@ifnextchar\par{\expandafter\ignorepars\@gobble}{}}
 
-% 局部定义，仅在当前题目内有效
-\define@key{exam@question}{points}[-1]{\def\rdxm@question@points{#1}}
-\define@key{exam@question}{level}[]{\def\rdxm@question@level{#1}}
-\define@key{exam@question}{year}[]{\def\rdxm@question@year{#1}}
+% local definition, valid only in current question
+\DeclareKeys[randexam-question]{
+   points .store = \l@rdxm@question@points
+  ,level  .store = \l@rdxm@question@level
+  ,year   .store = \l@rdxm@question@year
+}
 
-\newcommand\pointname{point}
-\newcommand\pointsname{points}
-\newcommand\pointorpoints[1]{\ifnumgreater{#1}{1}{\pointsname}{\pointname}}
+\newcommand\pointorpoints[1]{
+  \ifnumgreater{#1}{1}{
+    \UseExamTranslation{points-points}
+  }{
+    \UseExamTranslation{points-point}
+  }
+}
 
 \newcommand{\questionpointstext}[1]{ (#1 \pointorpoints{#1}) }
 
 \newcommand\rdxm@hook@exec@other@keys{}
 
-\newcommand{\execute@question@keys}[1]{%
-  \setkeys{exam@question}{#1}%
+\newrobustcmd\execute@question@keys{
   \rdxm@hook@exec@other@keys
-  \ifdefvoid{\rdxm@question@points}{}{\questionpointstext{\rdxm@question@points}}%
+  \ifdefvoid{\l@rdxm@question@points}{}{\questionpointstext{\l@rdxm@question@points}}
 }
 
-\newenvironment{questionreal}[1][]{%
-  \stepcounter{question}\setcounter{choice}{0}%
+\DeclareExamTemplate{questionbegin}{normal}{
   \ifresetnumber
     \ifonlyonequestion
       \renewcommand{\hangtext}{\qquad}%
     \else
-      \renewcommand{\hangtext}{\textbf{\textsf{\textcolor{question number}{\arabic{question}}.}}\;\,}%
+      \renewcommand{\hangtext}{\textbf{\textsf{\textcolor{question~number}{\arabic{question}}.}}\;\,}
     \fi
   \else
     \setcounter{questionreal}{\value{totalquestions}+\value{question}}%
-    \renewcommand{\hangtext}{\textbf{\textsf{\textcolor{question number}{\arabic{questionreal}}.}}\;\,}%
+    \renewcommand{\hangtext}{\textbf{\textsf{\textcolor{question~number}{\arabic{questionreal}}.}}\;\,}
   \fi
-  \settowidth{\hanglength}{\hangtext}%
+  \settowidth{\hanglength}{\hangtext}
   \description[leftmargin=\hanglength,labelwidth=0pt,labelsep=0pt,topsep=0pt,parsep=0pt]
-  \item[\hangtext]\execute@question@keys{#1}%
-}{\enddescription}
-\newenvironment{solutionreal}{%
-  \renewcommand{\hangtext}{\textbf{\textsf{\textcolor{solution name}{\solutionname}.}}\;\,}%
-  \settowidth{\hanglength}{\hangtext}%
+  \item[\hangtext]\execute@question@keys
+}
+\SelectExamTemplate{questionbegin}{normal}
+
+\DeclareExamTemplate{questionend}{normal}{\enddescription}
+\SelectExamTemplate{questionend}{normal}
+
+\NewDocumentEnvironment{questionreal}{O{}}{
+  \stepcounter{question}
+  \setcounter{choice}{0}
+  \SetKeys[randexam-question]{#1}
+  \UseExamTemplate{questionbegin}{default}
+}{
+  \UseExamTemplate{questionend}{default}
+}
+
+\DeclareExamTemplate{solutionbegin}{normal}{
+  \renewcommand{\hangtext}{
+    \textbf{\textsf{\textcolor{solution~name}{\UseExamTranslation{solution-Solution}}.}}\;\,
+  }
+  \settowidth{\hanglength}{\hangtext}
   \description[leftmargin=\hanglength,labelwidth=0pt,labelsep=0pt,topsep=0pt,parsep=0pt]
   \item[\hangtext]
-}{\enddescription}
+}
+\SelectExamTemplate{solutionbegin}{normal}
+
+\DeclareExamTemplate{solutionend}{normal}{\enddescription}
+\SelectExamTemplate{solutionend}{normal}
+
+\NewDocumentEnvironment{solutionreal}{}{
+  \UseExamTemplate{solutionbegin}{default}
+}{
+  \UseExamTemplate{solutionend}{default}
+}
 
 \let \oldnewpage   = \newpage
 \let \oldvfill     = \vfill
@@ -480,28 +689,37 @@
 %% Command for answer tables: \answertable
 %% ---------------------------------------------------------------------------
 
+%% property .store is the same as .tl_set:N in ltkeys.
+%% you need to put .code before .initial:n.
+%% total: total number of questions in current exam part;
+%% column: number of questions in each answer row;
+%% strut: strut height in each answer rows;
+%% notice: notice text before the answer table.
+\DeclareKeys[randexam-answertable]{
+   total  .code      = \DeclareExamValue{answertable}{total}{#1}
+  ,column .code      = \DeclareExamValue{answertable}{column}{#1}
+  ,strut  .code      = \DeclareExamValue{answertable}{strut}{#1}
+  ,strut  .initial:n = 1em
+  ,notice .code      = \DeclareExamValue{answertable}{notice}{#1}
+  ,notice .initial:n = {Notice:~you~MUST~write~the~answers~in~the~following~tables.}
+}
+
 \gdef\answer@lines@temp{}%
 \newcommand{\answer@lines@add}[1]{%
   \xdef\answer@lines@temp{\answer@lines@temp#1}%
 }
 
-\newcommand\insertnumbertext{Number}
-\newcommand\insertanswertext{Answer}
-\newcommand\insertanswertabletext{%
-  Notice: you MUST write the answers in the following tables.%
+\newrobustcmd\answer@number@hided[1]{\UseExamTranslation{answertable-Number}}
+\newrobustcmd\answer@cell@strut[1]{
+  \parbox[c][#1][c]{2em}{\hbox{\UseExamTranslation{answertable-Answer}}}
 }
-
-\newrobustcmd{\answer@number@hided}[1]{\insertnumbertext} % 在 PDFLaTeX 中需要保护中文
-\newrobustcmd{\answer@cell@strut}[1]{\parbox[c][#1][c]{2em}{\hbox{\insertanswertext}}}
 
 \newcounter{answer@col}
 \newcounter{answer@row}
 \newcounter{answer@total}
 
+%% #1: strut; #2: total; #3: column.
 \newcommand{\answer@lines}[3]{%
-  % #1 答题栏各栏指定高度
-  % #2 答题栏总共答案个数
-  % #3 答题栏每行答案个数
   \setcounter{answer@row}{(#2-1)/#3+1}% 除法向下取整，改为向上取整
   \begingroup
   \let\hline=\relax  \let\\=\relax % 禁止展开
@@ -537,13 +755,22 @@
   \answer@lines@temp
 }
 
-\newcommand{\answertable}[3][1em]{%
-  \insertanswertabletext\par
-  \begin{tabularx}{\linewidth}{|c|*{#3}{Y|}}
+\DeclareExamTemplate{answertable}{normal}{
+  \UseExamValue{answertable}{notice}\par
+  \begin{tabularx}{\linewidth}{|c|*{\UseExamValue{answertable}{column}}{Y|}}
     \hline
-    \answer@lines{#1}{#2}{#3}
-  \end{tabularx}%
-  \par\vspace{0.8em}%
+    \answer@lines{\UseExamValue{answertable}{strut}}
+      {\UseExamValue{answertable}{total}}{\UseExamValue{answertable}{column}}
+  \end{tabularx}
+}
+\SelectExamTemplate{answertable}{normal}
+
+\NewDocumentCommand\answertable{O{}}{
+  \begingroup
+  \SetKeys[randexam-answertable]{#1}
+  \UseExamTemplate{answertable}{default}
+  \endgroup
+  \par\vspace{0.8em}
 }
 
 %% ---------------------------------------------------------------------------
@@ -939,4 +1166,6 @@
     \let \upwhitearrow = \Uparrow
     \let \downwhitearrow = \Downarrow
 }}
+
+\IgnoreSpacesOff
 

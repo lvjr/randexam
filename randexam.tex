@@ -3,7 +3,7 @@
 \documentclass[12pt,plain,most]{randexam}
 \geometry{b5paper,margin=2cm}
 
-\newcommand*{\myversion}{2024B}
+\newcommand*{\myversion}{2024C}
 \newcommand*{\mydate}{\the\year-\mylpad\month-\mylpad\day}
 \newcommand*{\mylpad}[1]{\ifnum#1<10 0\the#1\else\the#1\fi}
 
@@ -46,6 +46,7 @@
 \NewDocumentCommand\myfile{m}{\textcolor{purple3}{\mbox{#1}}}
 \NewDocumentCommand\mykey{m}{\textcolor{brown3}{\mbox{\fakeverb{#1}}}}
 \NewDocumentCommand\myval{m}{\textcolor{azure3}{\mbox{\fakeverb{#1}}}}
+\NewDocumentCommand\myelem{m}{\textcolor{violet3}{\mbox{#1}}}
 
 \begin{document}
 
@@ -57,6 +58,7 @@
     Title: \fillbox{\color{blue3}The randexam class for LaTeX}\\
     Author: \fillbox{Jianrui Lyu (tolvjr@163.com)}\\
     Version: \fillbox{\myversion{} (\mydate)}\\
+    Code: \fillbox{\url{https://github.com/lvjr/randexam}}\\
     \hline
   \end{tabularx}%
 }
@@ -102,16 +104,16 @@ you add class option \myopt{random} (see Subsection \ref{opt:random}):
 \subsection{Document body}
 
 In document body you normally write an \mycmd{\examtitle},
-multiple \mycmd{\examgroup}, and an optional \mycmd{\examdata} commands:
+multiple \mycmd{\exampart}, and an optional \mycmd{\examdata} commands:
 
 \begin{code}
 \examtitle{name=Math Final Exam,date=2018-06-28,version=A}
 ......
-\examgroup{Fill in the blanks.}{3 points for each.}
+\exampart{Fill in the blanks.}{3 points for each.}
 ......
-\examgroup{Select one answer.}{3 points for each.}
+\exampart{Select one answer.}{3 points for each.}
 ......
-\examgroup{Work out math calculations.}{8 points for each.}
+\exampart{Work out math calculations.}{8 points for each.}
 ......
 \examdata{Some data may be used in the exam}
 ......
@@ -130,16 +132,16 @@ If the \mykey{date} key is missing, it has the default value \myval{\today}.
 When class option \myopt{random} is passed, the value of \mykey{version} key
 will be modified from \myval{A} to \myval{B}.
 
-\subsection{Exam groups}
+\subsection{Exam parts}
 
-The questions in an exam could be separated into several groups:
+The questions in an exam could be separated into several parts:
 
 \begin{code}
-\examgroup{Fill in the blanks.}{3 points for each.}
+\exampart{Fill in the blanks.}{3 points for each.}
 ......
-\examgroup{Select one answer.}{3 points for each.}
+\exampart{Select one answer.}{3 points for each.}
 ......
-\examgroup{Work out math calculations.}{8 points for each.}
+\exampart{Work out math calculations.}{8 points for each.}
 ......
 \end{code}
 
@@ -160,7 +162,7 @@ or the exam variants will be incorrect.
 \subsection{True-or-false questions}
 
 \begin{code}
-\examgroup{True-or-false questions}{3 points for each.}
+\exampart{True-or-false questions}{3 points for each.}
 
 \begin{question}
 The first true-or-false question. \tickout{T}
@@ -189,7 +191,7 @@ so as to make \mypkg{randexam} hide them in generating blank exam papers.
 \subsection{Fill-in-the-blank questions}
 
 \begin{code}
-\examgroup{Fill in the blanks.}{3 points for each.}
+\exampart{Fill in the blanks.}{3 points for each.}
 
 \begin{question}
 The first fill-in-the-blank question \fillout{answer}.
@@ -217,7 +219,7 @@ so as to make \mypkg{randexam} hide them in generating blank exam papers.
 \subsection{Multiple-choice questions}
 
 \begin{code}
-\examgroup{Select one answer.}{3 points for each.}
+\exampart{Select one answer.}{3 points for each.}
 
 \begin{question}
 The first multiple-choice questions \pickout{A}.
@@ -275,7 +277,7 @@ according to the lengths of the choices.
 For subjective questions, you could put answers inside \myenv{solution} environment.
 
 \begin{code}
-\examgroup{Work out math calculations.}{8 points for each.}
+\exampart{Work out math calculations.}{8 points for each.}
 
 \begin{question}
 The first math calculation question.
@@ -315,7 +317,7 @@ Answer to the second question.
 You can write other types of questions. For example:
 
 \begin{code}
-\examgroup{Some question type}{4 points for each.}
+\exampart{Some question type}{4 points for each.}
 
 \begin{question}
 First question text. \answer{Answer text.}
@@ -345,10 +347,16 @@ Normally you need a grade table after exam title.
 You can get it by using \mycmd{\gradetable} command.
 
 \begin{code}
-\gradetable
+\gradetable[total=6,strut=2em]
 \end{code}
 
-\gradetable
+\vspace{-1.5em}\gradetable[total=6,strut=2em]
+
+The meanings of keys in the \verb!\gradetable! command are:
+\begin{description}
+  \item[total] total number of parts in this exam.
+  \item[strut] strut height of the score row; its default value is \verb!2.5em!.
+\end{description}
 
 \subsection{Answer tables}
 
@@ -356,17 +364,18 @@ Before true-or-false, fill-in-the-blank, or multiple-choice questions,
 you may use \mycmd{\answertable} to generate an blank answer table:
 
 \begin{code}
-\answertable[3em]{6}{3}
+\answertable[total=6,column=3,strut=3em]
 \end{code}
 
-\answertable[3em]{6}{3}
+\answertable[total=6,column=3,strut=3em]
 
-The meanings of the three arguments of \verb!\answertable! commands are as follows:
-\begin{itemize}
-  \item The first one means the strut height of the answer rows; its default value is \verb!1em!.
-  \item The second one means the total number of questions in this exam group.
-  \item The third one means the number of questions in each row.
-\end{itemize}
+The meanings of keys in the \verb!\answertable! command are:
+\begin{description}
+  \item[total] total number of questions in this exam part.
+  \item[column] number of questions in each row.
+  \item[strut] strut height of the answer rows; its default value is \verb!1em!.
+  \item[notice] notice text before the answer table.
+\end{description}
 
 \subsection{Vertical space}
 
@@ -412,12 +421,13 @@ This is a question.
 
 \subsection{Solution name}
 
-If you want to change the name of \myenv{solution} environment,
-you could redefine \mycmd{\solutionname} command.
+If you would like to change the name of \myenv{solution} environment,
+you could modify the translation of \mykey{solution-Solution} keyword
+(see Subsection \ref{subsect:translation}).
 The following example changes it from "Solution" to "Proof":
 
 \begin{code}
-\renewcommand{\solutionname}{Proof}
+\DeclareExamTranslation{current}{solution-Solution=Proof}
 \end{code}
 
 \subsection{Points command}
@@ -498,7 +508,7 @@ The answers will be hidden in the compiled exam paper.
 \subsection{Randomized variants}\label{opt:random}
 
 Assume \myfile{exam-a-answer.tex} is an exam paper.
-You can get an randomized variant with all questions in the same group shuffled,
+You can get an randomized variant with all questions in the same part shuffled,
 by creating an \myfile{exam-b-answer.tex} file with the following lines:
 
 \begin{code}
@@ -507,7 +517,7 @@ by creating an \myfile{exam-b-answer.tex} file with the following lines:
 \end{code}
 
 That is to say, when adding \myopt{random} option to \mypkg{randexam} class,
-The questions in the same group will be shuffled in the compiled exam paper.
+The questions in the same part will be shuffled in the compiled exam paper.
 Furthermore, four choices in an \myenv{abcd} environment will be shuffled too.
 
 \subsection{Two column exam papers}
@@ -537,5 +547,148 @@ by creating a new TeX file with the following lines:
 
 That is to say, you can make an exam of A3 size from an exam of A4 size,
 even if you have only the PDF file.
+
+\section{Customizations}
+
+\subsection{Translations of keywords}\label{subsect:translation}
+
+With \mycmd{\DeclareExamTranslation} you can define the translaitons of the keywords
+in an \mypkg{randexam} paper. At this time only English keywords are defined:
+
+\begin{code}
+\DeclareExamTranslation{english}{
+   answertable-Answer   = Answer
+  ,answertable-Number   = Number
+  ,examdata-Appendix    = Appendix
+  ,exampart-Part        = Part
+  ,examtitle-Name       = Name
+  ,examtitle-Solutions  = Solutions
+  ,gradetable-Evaluator = Evaluator
+  ,gradetable-Part      = Part
+  ,gradetable-Score     = Score
+  ,gradetable-Total     = Total
+  ,headfoot-Name        = Name
+  ,headfoot-of          = of
+  ,headfoot-Page        = Page
+  ,headfoot-Solutions   = Solutions
+  ,headfoot-Version     = Version
+  ,points-point         = point
+  ,points-points        = points
+  ,question-Question    = Question
+  ,solution-Solution    = Solution
+}
+\end{code}
+
+You could translate them for another language and enable them with \mycmd{\SelectExamTranslation} command:
+
+\begin{code}
+\DeclareExamTranslation{somelang}{
+   question-Question    = Questioooooon
+  ,solution-Solution    = Soooooolution
+}
+\SelectExamTranslation{somelang}
+\end{code}
+\DeclareExamTranslation{somelang}{
+   question-Question    = Questioooooon
+  ,solution-Solution    = Soooooolution
+}
+\SelectExamTranslation{somelang}
+
+After this, you could load current translation of some keywords with \mycmd{\UseExamTranslation} command:
+
+\begin{code}
+\UseExamTranslation{question-Question}
+\UseExamTranslation{solution-Solution}
+\end{code}
+\hrule
+\UseExamTranslation{question-Question}
+\UseExamTranslation{solution-Solution}
+\vspace{0.5em}
+\hrule
+\vspace{0.5em}
+
+\SelectExamTranslation{english}
+
+This command is useful in defining new templates for the exam (see Subsection \ref{subsect:template}).
+
+\subsection{Saving and reading key values}
+
+With \mycmd{\DeclareExamValue} and \mycmd{\UseExamValue} you could save and read
+the value of a key, respectively.
+
+\begin{code}
+\DeclareExamValue{somemodule}{somekey}{SomeValue}
+\UseExamValue{somemodule}{somekey}
+\end{code}
+\hrule
+\DeclareExamValue{somemodule}{somekey}{SomeValue}
+\UseExamValue{somemodule}{somekey}
+\vspace{0.5em}
+\hrule
+\vspace{0.5em}
+
+These two commands are useful in defining new templates
+for the exam (see Subsection \ref{subsect:template}).
+
+\subsection{Templates of elements}\label{subsect:template}
+
+With \mycmd{\DeclareExamTemplate} you could define a new template for some exam element,
+which could be set as default template with \mycmd{\SelectExamTemplate}.
+And with \mycmd{\UseExamTemplate} you could use the default template of the element.
+
+To customize \myelem{examtitle} element for your school,
+you can write the following code in document preamble:
+\begin{code}
+\DeclareExamTemplate{examtitle}{myschool}{%
+  \fbox{%
+    \UseExamValue{examtitle}{name}\quad%
+    \UseExamValue{examtitle}{date}%
+  }%
+}%
+\SelectExamTemplate{examtitle}{myschool}
+\end{code}
+\DeclareExamTemplate{examtitle}{myschool}{%
+  \fbox{%
+    \UseExamValue{examtitle}{name}\quad%
+    \UseExamValue{examtitle}{date}%
+  }%
+}%
+\SelectExamTemplate{examtitle}{myschool}
+
+Then the \mycmd{\examtitle} command in document body will produce different result:
+\begin{code}
+\examtitle{name=Final Exam in My School,date=2024-01-01}
+\end{code}
+\vspace{-1em}
+\examtitle{name=Final Exam in My School,date=2024-01-01}
+
+Normally \mycmd{\examtitle} will call \mycmd{\UseExamTemplate{examtitle}{default}}.
+
+All elements that could be customized with templates in an exam paper
+are listed in the following table:
+
+\begingroup\renewcommand\arraystretch{1.5}\noindent
+\begin{tabularx}{\linewidth}{ll}
+\hline
+  \myelem{examtitle}     & for customizing \mycmd{\examtitle} command \\
+\hline
+  \myelem{exampart}      & for customizing \mycmd{\exampart} command \\
+\hline
+  \myelem{examdata}      & for customizing \mycmd{\examdata} command \\
+\hline
+  \myelem{gradetable}    & for customizing \mycmd{\gradetable} command \\
+\hline
+  \myelem{answertable}   & for customizing \mycmd{\answertable} command \\
+\hline
+  \myelem{questionbegin} & for customizing \myenv{question} environment \\
+\hline
+  \myelem{questionend}   & for customizing \myenv{question} environment \\
+\hline
+  \myelem{solutionbegin} & for customizing \myenv{solution} environment \\
+\hline
+  \myelem{solutionend}   & for customizing \myenv{solution} environment \\
+\hline
+\end{tabularx}\par
+\endgroup
 
 \end{document}
