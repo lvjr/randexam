@@ -1,9 +1,9 @@
 % -*- coding: utf-8 -*-
 
-\documentclass[12pt,plain,most]{randexam}
+\documentclass[12pt,plain,math=most]{randexam}
 \geometry{b5paper,margin=2cm}
 
-\newcommand*{\myversion}{2024C}
+\newcommand*{\myversion}{2024D}
 \newcommand*{\mydate}{\the\year-\mylpad\month-\mylpad\day}
 \newcommand*{\mylpad}[1]{\ifnum#1<10 0\the#1\else\the#1\fi}
 
@@ -28,6 +28,7 @@
 \renewcommand{\arraystretch}{1.3}
 
 \usepackage{tabularx}
+\usepackage{booktabs}
 
 \newcommand{\fillbox}[1]{\ulinefill{#1}\underline{#1}\ulinefill{#1}}
 
@@ -361,7 +362,7 @@ The meanings of keys in the \verb!\gradetable! command are:
 \subsection{Answer tables}
 
 Before true-or-false, fill-in-the-blank, or multiple-choice questions,
-you may use \mycmd{\answertable} to generate an blank answer table:
+you may use \mycmd{\answertable} to generate a blank answer table:
 
 \begin{code}
 \answertable[total=6,column=3,strut=3em]
@@ -427,8 +428,18 @@ you could modify the translation of \mykey{solution-Solution} keyword
 The following example changes it from "Solution" to "Proof":
 
 \begin{code}
-\DeclareExamTranslation{current}{solution-Solution=Proof}
+\SetExamTranslation{solution-Solution=Proof}
+\begin{solution}
+  This is the proof.
+\end{solution}
 \end{code}
+
+\begingroup
+\SetExamTranslation{solution-Solution=Proof}
+\begin{solution}
+  This is the proof.
+\end{solution}
+\endgroup
 
 \subsection{Points command}
 
@@ -452,7 +463,7 @@ And the point text will be printed at the right edge of the line.
 
 \subsection{Alignment commands}
 
-With class option \myopt{many}, \mypkg{randexam} will load \mypkg{freealign} package.
+With class option \myopt{freealign}, \mypkg{randexam} loads \mypkg{freealign} package,
 and \mypkg{freealign} package provides several commands for aligning math formulas in different lines.
 
 Here is the first example:
@@ -491,10 +502,37 @@ you need two compilations to get correct results.
 
 \section{Class options}
 
+All options provided by \mypkg{randexam} class are listed in the following table:
+
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+  \myopt{noanswer}   & hide all answers in the exam paper \\
+  \myopt{random}     & shuffle questions in each part \\
+  \myopt{seed}       & the random seed used by \myopt{random} option \\
+\midrule
+  \myopt{plain}      & set page style \myval{plain} \\
+  \myopt{a3paper}    & typeset a two-column paper of A3 size \\
+  \myopt{a3input}    & input a paper of A4 size and change it to A3 size \\
+\midrule
+  \myopt{mathdesign} & use \mypkg{mathdesign} utopia font \\
+  \myopt{freealign}  & load \mypkg{freealign} package \\
+  \myopt{medmath}    & load \mypkg{medmath} package \\
+  \myopt{moremath}   & define more math commands \\
+  \myopt{math=many}  & $\Leftrightarrow$ \myopt{mathdesign,freealign} \\
+  \myopt{math=most}  & $\Leftrightarrow$ \myopt{mathdesign,freealign,medmath} \\
+  \myopt{math=all}   & $\Leftrightarrow$ \myopt{mathdesign,freealign,medmath,moremath} \\
+\midrule
+  \myopt{chinese}    & select Chinese language and load \mypkg{ctex} package \\
+\bottomrule
+\end{tabularx}
+
+Some of the options could also be modified with \mycmd{\SetExamOption}:
+\myopt{noanswer}, \myopt{random}, and \myopt{seed}.
+
 \subsection{Blank exam papers}
 
 Assume \myfile{exam-a-answer.tex} is an exam paper with answers.
-You can easily get an blank exam paper with answers removed,
+You can easily get a blank exam paper with answers removed,
 by creating an \myfile{exam-a-blank.tex} file with the following lines:
 
 \begin{code}
@@ -508,7 +546,7 @@ The answers will be hidden in the compiled exam paper.
 \subsection{Randomized variants}\label{opt:random}
 
 Assume \myfile{exam-a-answer.tex} is an exam paper.
-You can get an randomized variant with all questions in the same part shuffled,
+You could get a randomized variant with all questions in the same part shuffled,
 by creating an \myfile{exam-b-answer.tex} file with the following lines:
 
 \begin{code}
@@ -553,7 +591,7 @@ even if you have only the PDF file.
 \subsection{Translations of keywords}\label{subsect:translation}
 
 With \mycmd{\DeclareExamTranslation} you can define the translaitons of the keywords
-in an \mypkg{randexam} paper. At this time only English keywords are defined:
+in a \mypkg{randexam} paper.
 
 \begin{code}
 \DeclareExamTranslation{english}{
@@ -579,7 +617,9 @@ in an \mypkg{randexam} paper. At this time only English keywords are defined:
 }
 \end{code}
 
-You could translate them for another language and enable them with \mycmd{\SelectExamTranslation} command:
+At this time only English and Chinese keywords are defined.
+You could translate them for another language and enable them
+with \mycmd{\SelectExamTranslation} command:
 
 \begin{code}
 \DeclareExamTranslation{somelang}{
@@ -613,21 +653,53 @@ This command is useful in defining new templates for the exam (see Subsection \r
 
 \subsection{Saving and reading key values}
 
-With \mycmd{\DeclareExamValue} and \mycmd{\UseExamValue} you could save and read
+With \mycmd{\SetExamValue} and \mycmd{\UseExamValue} you could save and read
 the value of a key, respectively.
 
 \begin{code}
-\DeclareExamValue{somemodule}{somekey}{SomeValue}
+\SetExamValue{somemodule}{somekey=SomeValue}
 \UseExamValue{somemodule}{somekey}
 \end{code}
 \hrule
-\DeclareExamValue{somemodule}{somekey}{SomeValue}
+\SetExamValue{somemodule}{somekey=SomeValue}
 \UseExamValue{somemodule}{somekey}
 \vspace{0.5em}
 \hrule
 \vspace{0.5em}
 
-These two commands are useful in defining new templates
+The \mypkg{randexam} class also provides commands \mycmd{\IfExamValueExistT},
+\mycmd{\IfExamValueExistF}, and \mycmd{\IfExamValueExistTF},
+with which you can do conditional typesetting.
+
+\begin{code}
+\IfExamValueExistTF{somemodule}{somekey}{True}{False}
+\end{code}
+\hrule
+\IfExamValueExistTF{somemodule}{somekey}{True}{False}
+\vspace{0.5em}
+\hrule
+\vspace{0.5em}
+
+Furthermore, you may change typeset command of some counter with \mycmd{\SetExamValue}
+and the counter is typeset with \mycmd{\TheExamCounter} command when needed.
+
+\setcounter{exampart}{4}
+\begin{code}
+\SetExamValue{exampart}{number=\Roman}
+\SetExamValue{question}{number=\arabic}
+Part \TheExamCounter{exampart},
+Question \TheExamCounter{question}
+\end{code}
+\hrule
+\SetExamValue{exampart}{number=\Roman}
+\SetExamValue{question}{number=\arabic}
+Part \TheExamCounter{exampart},
+Question \TheExamCounter{question}
+\vspace{0.5em}
+\hrule
+\vspace{0.5em}
+
+These commands are useful in defining new templates
 for the exam (see Subsection \ref{subsect:template}).
 
 \subsection{Templates of elements}\label{subsect:template}
@@ -657,10 +729,10 @@ you can write the following code in document preamble:
 
 Then the \mycmd{\examtitle} command in document body will produce different result:
 \begin{code}
-\examtitle{name=Final Exam in My School,date=2024-01-01}
+\examtitle{name=Final Exam in My School,date=\today}
 \end{code}
 \vspace{-1em}
-\examtitle{name=Final Exam in My School,date=2024-01-01}
+\examtitle{name=Final Exam in My School,date=\today}
 
 Normally \mycmd{\examtitle} will call \mycmd{\UseExamTemplate{examtitle}{default}}.
 

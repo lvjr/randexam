@@ -1,50 +1,81 @@
 % -*- coding: utf-8 -*-
 % ----------------------------------------------------------------------------
 % Author:  Jianrui Lyu <tolvjr@163.com>
+% Package: https://ctan.org/pkg/randexam
 % License: The LaTeX Project Public License 1.3c
 % ----------------------------------------------------------------------------
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{randexam}[2024-01-28 v2024C Make an exam paper and its randomized variants]
+\ProvidesClass{randexam}[2024-02-03 v2024D Make an exam paper and its randomized variants]
 
 %% Old LaTeX release could not recognize date format like 2022-11-01
 %\@ifl@t@r\fmtversion{2022-11-01}{}{
 \@ifl@t@r\fmtversion{2022/11/01}{}{
   \ClassError{randexam}{%
     Your current TeX distribution is quite old.\MessageBreak
-    We need CTeX 3.0+ or MiKTeX 2023+ or TeXLive 2023+%
+    We need TeXLive 2023+ or MiKTeX 2023+ or CTeX 3.0+%
   }{Please update your TeX distribution first.}
 }
+
+%% ---------------------------------------------------------------------------
+%% Start ignoring spaces in the code
+%% ---------------------------------------------------------------------------
 
 \RequirePackage{functional}
 \IgnoreSpacesOn
 
+%% ---------------------------------------------------------------------------
+%% Declare class options
+%% ---------------------------------------------------------------------------
+
 \RequirePackage{etoolbox}
 
-\newbool{plain}       \boolfalse{plain}      % use plain page style
-\newbool{twoinone}    \boolfalse{twoinone}   % use A3 paper
-\newbool{oneside}     \boolfalse{oneside}    % use single sided exam paper
-\newbool{resetnumber} \booltrue{resetnumber} % reset numbers in new exam groups
-\newbool{random}      \boolfalse{random}     % shuffle questions
-\newbool{answer}      \booltrue{answer}      % show answers
-\newbool{amsfonts}    \boolfalse{amsfonts}   % use ams fonts
-\newbool{freealign}   \boolfalse{freealign}  % load freealign package
-\newbool{medmath}     \boolfalse{medmath}    % use medium-size formulas
-\newbool{evaluator}   \boolfalse{evaluator}  % add evaluator line in the grade table
+\newbool{exam@plain}      \boolfalse{exam@plain}      % use plain page style
+\newbool{exam@twoinone}   \boolfalse{exam@twoinone}   % use A3 paper
+\newbool{exam@oneside}    \boolfalse{exam@oneside}    % use single sided exam paper
+\newbool{exam@resetnumber}\booltrue{exam@resetnumber} % reset numbers in new exam parts
+\newbool{exam@random}     \boolfalse{exam@random}     % shuffle questions
+\newbool{exam@answer}     \booltrue{exam@answer}      % show answers
+\newbool{exam@evaluator}  \boolfalse{exam@evaluator}  % add evaluator line in the grade table
+\newbool{exam@mathdesign} \booltrue{exam@mathdesign}  % use mathdesign fonts
+\newbool{exam@freealign}  \boolfalse{exam@freealign}  % load freealign package
+\newbool{exam@medmath}    \boolfalse{exam@medmath}    % use medium-size formulas
+\newbool{exam@moremath}   \boolfalse{exam@moremath}   % define more math commands
 
-\DeclareKeys{
-  plain     .if    = plain,
-  a3paper   .if    = twoinone,
-  a3input   .code  = \booltrue{twoinone}\booltrue{plain},
-  oneside   .if    = oneside,
-  random    .if    = random,
-  noanswer  .ifnot = answer,
-  amsfonts  .if    = amsfonts,
-  freealign .if    = freealign,
-  medmath   .if    = medmath,
-  evaluator .if    = evaluator,
-  many      .code  = \booltrue{freealign},
-  most      .code  = \booltrue{freealign}\booltrue{medmath}
+\DeclareKeys[randexam]{
+   plain      .if        = exam@plain
+  ,a3paper    .if        = exam@twoinone
+  ,a3input    .code      = \booltrue{exam@twoinone}\booltrue{exam@plain}
+  ,oneside    .if        = exam@oneside
+  ,random     .if        = exam@random
+  ,noanswer   .ifnot     = exam@answer
+  ,evaluator  .if        = exam@evaluator
+  ,mathdesign .if        = exam@mathdesign
+  ,freealign  .if        = exam@freealign
+  ,medmath    .if        = exam@medmath
+  ,moremath   .if        = exam@moremath
+  ,math       .choice:
+  ,math       .default:n = many
+  ,math/many  .code      = \booltrue{exam@mathdesign}\booltrue{exam@freealign}
+  ,math/most  .code      = \booltrue{exam@mathdesign}\booltrue{exam@freealign}
+                           \booltrue{exam@medmath}
+  ,math/all   .code      = \booltrue{exam@mathdesign}\booltrue{exam@freealign}
+                           \booltrue{exam@medmath}\booltrue{exam@moremath}
+}
+
+%% Support for Chinese language
+\newbool{exam@ctex}     \boolfalse{exam@ctex}      % load ctex package
+\newbool{exam@solidot}  \boolfalse{exam@solidot}   % use full-width solid periods
+\newbool{exam@sourcehan}\boolfalse{exam@sourcehan} % use source han font
+\DeclareKeys[randexam]{
+   ctex         .if        = exam@ctex
+  ,solidot      .if        = exam@solidot
+  ,sourcehan    .if        = exam@sourcehan
+  ,chinese      .choice:
+  ,chinese      .default:n = many
+  ,chinese/many .code      = \booltrue{exam@ctex}
+  ,chinese/most .code      = \booltrue{exam@ctex}\booltrue{exam@solidot}
+  ,chinese/all  .code      = \booltrue{exam@ctex}\booltrue{exam@solidot}\booltrue{exam@sourcehan}
 }
 
 \DeclareUnknownKeyHandler{\PassOptionsToClass{\CurrentOption}{article}}
@@ -53,11 +84,11 @@
 
 \LoadClass{article}
 
-\iftwoinone
+\ifbool{exam@twoinone}{
   \RequirePackage[a3paper,landscape,twocolumn,columnsep=60mm,left=30mm,right=30mm,top=25mm,bottom=25mm]{geometry}
-\else
+}{
   \RequirePackage[a4paper,left=30mm,right=30mm,top=25mm,bottom=25mm]{geometry}
-\fi
+}
 
 \RequirePackage{amsmath}
 \RequirePackage{array}
@@ -70,18 +101,26 @@
 \RequirePackage{tabularx}
 \RequirePackage{xcolor}
 
-\ifplain
-  \allowdisplaybreaks[4]
-\fi
+\ifbool{exam@plain}{\allowdisplaybreaks[4]}{}
 
-\ifamsfonts
-  \RequirePackage{amssymb}
-\else
+\ifbool{exam@twoinone}{
+  \RequirePackage{pdfpages}
+  % When pdfpages package is newer enough, putting \includepdf at the beginning
+  % of document body will cause an error about an undefined command;
+  % see https://tex.stackexchange.com/questions/352007/ieeetran-and-pdfpages
+  % Also since LaTeX release 2018-04-01 \@ifundefined won't turn an undefined command
+  % into \relax; see https://www.latex-project.org/news/latex2e-news/ltnews28.pdf
+  \@ifundefined{@setmarks}{\let\@setmarks\relax}{}
+}{}
+
+\ifbool{exam@mathdesign}{
   \RequirePackage[utopia]{mathdesign} % charter, utopia
   \renewcommand\bfdefault{bx}
   \let\oldoiint\oiint\renewcommand{\oiint}{\oldoiint\nolimits}
   \DeclareTextCommandDefault{\nobreakspace}{\leavevmode\nobreak\ }
-\fi
+}{
+  \RequirePackage{amssymb}
+}
 
 \newcolumntype{Y}{>{\centering\arraybackslash}X}
 \newcolumntype{n}[1]{>{\centering\arraybackslash}m{#1}}
@@ -101,13 +140,11 @@
 %% Otherwise, we may enable the template by using \SelectExamTemplate command
 \NewDocumentCommand\DeclareExamTemplate{mm+m}{
   \tlSet{\expName{l@rdxm@template@#1@#2@tl}}{#3}
-  \ignorespaces
 }
 
 %% #1: exam element; #2: template name
 \NewDocumentCommand\SelectExamTemplate{mm}{
   \tlSetEq{\expName{l@rdxm@template@#1@default@tl}}{\expName{l@rdxm@template@#1@#2@tl}}
-  \ignorespaces
 }
 
 %% #1: exam element; #2: template name.
@@ -122,7 +159,7 @@
 
 \tlSet\l@rdxm@current@language@tl{english}
 
-\DeclareUnknownKeyHandler[randexam-translation]{
+\DeclareUnknownKeyHandler[randexam/translation]{
   \tlSet{\expName{l@rdxm@translate@\l@rdxm@declare@language@tl @#1@tl}}{#2}
 }
 
@@ -133,20 +170,35 @@
   }{
     \tlSet\l@rdxm@declare@language@tl{#1}
   }
-  \SetKeys[randexam-translation]{#2}
-  \ignorespaces
+  \SetKeys[randexam/translation]{#2}
+}
+
+%% #1: a keyval list with keyword = transaltion format
+\NewDocumentCommand\SetExamTranslation{m}{
+  \tlSetEq\l@rdxm@declare@language@tl\l@rdxm@current@language@tl
+  \SetKeys[randexam/translation]{#1}
 }
 
 %% #1: language name
 \NewDocumentCommand\SelectExamTranslation{m}{
   \tlSet\l@rdxm@current@language@tl{#1}
-  \ignorespaces
 }
 
 %% #1: keyword name.
 %% In an expandable command, we should use \UseName but not \expName.
 \NewExpandableDocumentCommand\UseExamTranslation{m}{
   \UseName{l@rdxm@translate@\l@rdxm@current@language@tl @#1@tl}
+}
+
+%% #1: keyword translation; #2: keyword number.
+%% The \relax prevents functional package from treating the result as a function
+\NewDocumentCommand\MakeExamNameNumber{mm}{
+  \clistSet\lTmpaClist{\expWhole{#1}}
+  \intCompareTF{\clistVarCount\lTmpaClist}>{1}{
+    \prgReturn{\relax\clistVarItem\lTmpaClist{1}#2\clistVarItem\lTmpaClist{2}}
+  }{
+    \prgReturn{#1~#2}
+  }
 }
 
 \DeclareExamTranslation{english}{
@@ -174,19 +226,52 @@
 \SelectExamTranslation{english}
 
 %% ---------------------------------------------------------------------------
-%% Keyvalue commands for exam options
+%% Keyvalue commands for exam elements
 %% ---------------------------------------------------------------------------
 
-%% #1 module name; #2: key name; #3: its value
-\NewDocumentCommand\DeclareExamValue{mm+m}{
-  \tlSet{\expName{l@rdxm@value@#1@#2@tl}}{#3}
-  \ignorespaces
+%% #1 element name; #2: key definitions
+\NewDocumentCommand\DeclareExamValue{m+m}{
+  \DeclareKeys[randexam/#1]{#2}
 }
 
-%% #1: module name; #2: key name.
+%% #1 element name; #2: key name; #3: its value
+\NewDocumentCommand\rdxm@set@one@value{mm+m}{
+  \tlSet{\expName{l@rdxm@value@#1@#2@tl}}{#3}
+}
+
+\newrobustcmd\rdxm@declare@key@handler[1]{
+  \DeclareUnknownKeyHandler[randexam/#1]{\rdxm@set@one@value{#1}{##1}{##2}}
+}
+
+%% #1 element name; #2: key-value list
+\NewDocumentCommand\SetExamValue{m+m}{
+  \rdxm@declare@key@handler{#1}
+  \SetKeys[randexam/#1]{#2}
+}
+
+%% #1: element name; #2: key name.
 %% In an expandable command, we should use \UseName but not \expName.
+%% When the key is undefined, the expanded result of \UseName is \relax,
+%% and we could test this case with \tlIfExist function.
 \NewExpandableDocumentCommand\UseExamValue{mm}{
   \UseName{l@rdxm@value@#1@#2@tl}
+}
+
+%% In fact, \ifdef/ifcsname is a wrapper for \ifdefined/\ifcsname in eTeX;
+%% they will not turn an undefined macro into \relax
+\NewExpandableDocumentCommand\IfExamValueExistT{mm+m}{
+  \ifcsdef{l@rdxm@value@#1@#2@tl}{#3}{}
+}
+\NewExpandableDocumentCommand\IfExamValueExistF{mm+m}{
+  \ifcsdef{l@rdxm@value@#1@#2@tl}{}{#3}
+}
+\NewExpandableDocumentCommand\IfExamValueExistTF{mm+m+m}{
+  \ifcsdef{l@rdxm@value@#1@#2@tl}{#3}{#4}
+}
+
+%% #1 element name
+\NewDocumentCommand\TheExamCounter{m}{
+  \UseExamValue{#1}{number}{#1}
 }
 
 %% ---------------------------------------------------------------------------
@@ -197,23 +282,14 @@
 \newcommand{\underbox}[2]{\kern0pt\underline{\makebox[#1]{#2}}\kern0pt\relax}
 \newcommand{\underparbox}[2]{\kern0pt\underline{\parbox[b]{#1}{#2}}\kern0pt\relax}
 
-\newcommand{\ischeck}[1]{\ifnum#1>0\,$\checkmark$\,\else\quad\fi}
-\newcommand{\isquad}[1]{\ifnum#1=0\,$\checkmark$\,\else\quad\fi}
+\rdxm@declare@key@handler{examtitle}
 
-\DeclareKeys[randexam-title]{
-   name    .code = \DeclareExamValue{examtitle}{name}{#1}
-  ,date    .code = \DeclareExamValue{examtitle}{date}{#1}
-  ,version .code = \DeclareExamValue{examtitle}{version}{#1}
-}
-
-\NewDocumentCommand\SetExamTitle{+m}{\SetKeys[randexam-title]{#1}}
-
-\SetExamTitle{name=Math~1906,date=\today,version=A}
+\SetExamValue{examtitle}{name=Math~1906,date=\today,version=A}
 
 \DeclareExamTemplate{examtitle}{normal}{
   \begingroup
   \Large\noindent
-  \ifbool{answer}{
+  \ifbool{exam@answer}{
     \textcolor{red!80!black}{
       \UseExamValue{examtitle}{name}\hfill\UseExamTranslation{examtitle-Solutions}
     }
@@ -225,14 +301,14 @@
 \SelectExamTemplate{examtitle}{normal}
 
 \NewDocumentCommand\examtitle{+m}{
-  \SetExamTitle{#1}
+  \SetExamValue{examtitle}{#1}
   \thispagestyle{plain}
-  \ifbool{random}{
+  \ifbool{exam@random}{
     \tlIfEqT{\expWhole{\UseExamValue{examtitle}{version}}}{A}{
-      \DeclareExamValue{examtitle}{version}{B}
+      \SetExamValue{examtitle}{version=B}
     }
     \tlIfEqT{\expWhole{\UseExamValue{examtitle}{version}}}{C}{
-      \DeclareExamValue{examtitle}{version}{D}
+      \SetExamValue{examtitle}{version=D}
     }
   }{}
   \UseExamTemplate{examtitle}{default}
@@ -244,17 +320,13 @@
 
 %% total: total number of parts in current exam;
 %% strut: strut height in the score row.
-\DeclareKeys[randexam-gradetable]{
-   total  .code      = \DeclareExamValue{gradetable}{total}{#1}
-  ,total  .initial:n = 6
-  ,strut  .code      = \DeclareExamValue{gradetable}{strut}{#1}
-  ,strut  .initial:n = 2.5em
-}
+\rdxm@declare@key@handler{gradetable}
+\SetKeys[randexam/gradetable]{total=6,strut=2.5em}
 
 \newcounter{@exam@grade@cnt}
 \newrobustcmd\rdxm@part@number[1]{
   \setcounter{@exam@grade@cnt}{#1}
-  \exam@part@number{@exam@grade@cnt}
+  \UseExamValue{exampart}{number}{@exam@grade@cnt}
 }
 
 %% #1: the tl variable; #2: the first cell; #3: the last cell
@@ -288,7 +360,7 @@
     {}
     {\UseExamValue{gradetable}{total}}
     \rdxm@gobble@one
-  \ifbool{evaluator}{
+  \ifbool{exam@evaluator}{
     \rdxm@table@make@row
       \l@rdxm@gradetable@evaluator@tl
       {\textbf{\UseExamTranslation{gradetable-Evaluator}}
@@ -302,7 +374,7 @@
     \hline
     \l@rdxm@gradetable@part@tl \\ \hline
     \l@rdxm@gradetable@score@tl \\ \hline
-    \ifbool{evaluator}{\l@rdxm@gradetable@evaluator@tl \\ \hline}{}
+    \ifbool{exam@evaluator}{\l@rdxm@gradetable@evaluator@tl \\ \hline}{}
   \end{tabularx}
 }
 \SelectExamTemplate{gradetable}{normal}
@@ -310,7 +382,7 @@
 \NewDocumentCommand\gradetable{O{}}{
   \par\vspace{1em}
   \begingroup
-  \SetKeys[randexam-gradetable]{#1}
+  \SetKeys[randexam/gradetable]{#1}
   \UseExamTemplate{gradetable}{default}
   \endgroup
 }
@@ -322,7 +394,7 @@
 \newcommand{\rdxm@columnbox}[1]{\makebox[\columnwidth]{#1}}
 \newcommand{\rdxm@headleft}{\UseExamValue{examtitle}{name}}
 \newcommand{\rdxm@headright}{
-  \ifbool{answer}{
+  \ifbool{exam@answer}{
     \UseExamTranslation{headfoot-Solutions}
   }{
     \UseExamTranslation{headfoot-Name}:\hspace{12em}
@@ -331,46 +403,44 @@
 \newcommand{\rdxm@headtext}{\rdxm@headleft\hfill\rdxm@headright}
 \newcommand{\rdxm@footleft}{\UseExamValue{examtitle}{date}}
 \newcommand{\rdxm@footcenter}{
-  \UseExamTranslation{headfoot-Page}~\thepage\space
-  \UseExamTranslation{headfoot-of}~\zpageref{LastPage}
+  \MakeExamNameNumber{\UseExamTranslation{headfoot-Page}}{\thepage}
+  \space
+  \MakeExamNameNumber{\UseExamTranslation{headfoot-of}}{\zpageref{LastPage}}
 }
 \newcommand{\rdxm@footright}{
-  \UseExamTranslation{headfoot-Version}~\UseExamValue{examtitle}{version}
+  \MakeExamNameNumber{\UseExamTranslation{headfoot-Version}}
+      {\UseExamValue{examtitle}{version}}
 }
 \newcommand{\rdxm@foottext}{\rdxm@footleft\hfill\rdxm@footcenter\hfill\rdxm@footright}
 
 % fancy page style
 \fancyhf{} % clear head and foot
-\iftwoinone
-  \renewcommand{\headrulewidth}{0pt}%
+\ifbool{exam@twoinone}{
+  \renewcommand{\headrulewidth}{0pt}
   \lhead{\small\underline{\rdxm@columnbox{\rdxm@headtext}\strut}}
   \rhead{\small\underline{\rdxm@columnbox{\rdxm@headtext}\strut}}
   \lfoot{\small\rdxm@columnbox{\rdxm@foottext}}
   \rfoot{\small\rdxm@columnbox{\stepcounter{page}\rdxm@foottext}}
-\else
+}{
   \lhead{\small\rdxm@headleft}
   \rhead{\small\rdxm@headright}
   \cfoot{\small\rdxm@foottext}
-\fi
+}
 
 % plain page style
 \fancypagestyle{plain}{
-  \renewcommand{\headrulewidth}{0pt}%
+  \renewcommand{\headrulewidth}{0pt}
   \fancyhf{}
-  \iftwoinone
+  \ifbool{exam@twoinone}{
     \rhead{\small\underline{\rdxm@columnbox{\rdxm@headtext\strut}}}
     \lfoot{\small\rdxm@columnbox{\rdxm@foottext}}
     \rfoot{\small\rdxm@columnbox{\stepcounter{page}\rdxm@foottext}}
-  \else
+  }{
     \cfoot{\small\rdxm@foottext}
-  \fi
+  }
 }
 
-\ifplain
-  \pagestyle{plain}
-\else
-  \pagestyle{fancy}
-\fi
+\ifbool{exam@plain}{\pagestyle{plain}}{\pagestyle{fancy}}
 
 %% ---------------------------------------------------------------------------
 %% Class option for shuffling questions: random
@@ -384,17 +454,18 @@
   seed .initial:n = 19061116
 }
 
-\ifrandom
+\ifbool{exam@random}{
   \RequirePackage{pgf}
   \RequirePackage{pgffor}
-  \newcommand*\exam@set@seed{%
-    %% 当\pgfmathrandom的参数为3的倍数时，对相邻种子生成的多个随机数分布不均匀
-    %\pgfmathsetseed{\numexpr\rdxm@random@seed+\value{rdxm@part}-1\relax}%
-    %% 因此我们改用下面的方法，用随机数种子生成下一个随机数种子
-    \pgfmathsetseed{\rdxm@random@seed}%
-    \pgfmathrandominteger\rdxm@random@seed{1}{2147483647}%
+  \newcommand*\exam@set@seed{
+    %% When the argument of \pgfmathrandom is a multiple of three,
+    %% the random numbers generated by nearby seeds are not uniformly distributed
+    %\pgfmathsetseed{\numexpr\rdxm@random@seed+\value{exampart}-1\relax}
+    %% Therefore we take this approach: generating next random seed with current seed
+    \pgfmathsetseed{\rdxm@random@seed}
+    \pgfmathrandominteger\rdxm@random@seed{1}{2147483647}
   }
-\fi
+}{}
 
 %% ---------------------------------------------------------------------------
 %% Command for exam groups: \exampart
@@ -403,20 +474,26 @@
 %% Environment for solutions: solution
 %% ---------------------------------------------------------------------------
 
-%% You need to put .code before .initial:n
-\DeclareKeys[randexam-exampart]{%
-  partnumber .code      = \let\exam@part@number#1,
-  partnumber .initial:n = \Roman,
-}
+\newcounter{exampart}
+\renewcommand\theexampart{\Roman{exampart}}
 
-\newif\ifonlyonequestion \onlyonequestionfalse % 此部分仅有一道题时不显示题目编号
+\rdxm@declare@key@handler{exampart}
+\SetExamValue{exampart}{number=\Roman}
+
+%% No displaying question number when there is only one question in the part
+\newbool{exam@onlyonequestion}\boolfalse{exam@onlyonequestion}
+
 \xdef\allquestions{}
 \xdef\lastquestion{}
-\newcounter{question}        % 当前题型的小题编号
-\newcounter{questionreal}    % 实际显示的小题编号，在各题型小题统一编号时使用
-\newcounter{totalquestions}  % 之前各题型小题总数，在各题型小题统一编号时使用
 
-\newcounter{choice} % 后面选择题的 abcd 环境要用到
+%% question: problem number within current part
+%% questionreal: problem number for display, used when exam@resetnumber=false
+%% totalquestions: total number of problems in previous parts, used when exam@resetnumber=false
+\newcounter{question}
+\newcounter{questionreal}
+\newcounter{totalquestions}
+
+\newcounter{choice} % used in abcd environment
 \newcommand{\hangtext}{}
 \newlength{\hanglength}
 \colorlet{part~number}{black}
@@ -426,83 +503,83 @@
 \newcounter{rdxm@shuffle@temp@cnt}
 \newcounter{rdxm@list@temp@cnt}
 
-\newcommand\rdxm@list@print[1]{%
-  \par\renewcommand*{\do}[1]{(##1)}%
+\newcommand\rdxm@list@print[1]{
+  \par\renewcommand*{\do}[1]{(##1)}
   \dolistloop#1%
 }
 
-\newcommand\rdxm@list@remove[2]{%
+\newcommand\rdxm@list@remove[2]{
   %\rdxm@list@print\rdxm@shuffle@list
-  \setcounter{rdxm@list@temp@cnt}{0}%
-  \global\let\rdxm@tmpa@list=#1%
+  \setcounter{rdxm@list@temp@cnt}{0}
+  \global\let\rdxm@tmpa@list=#1
   \gdef#1{}%
-  \par\renewcommand*{\do}[1]{%
-    \stepcounter{rdxm@list@temp@cnt}%
-    \ifnumequal{\value{rdxm@list@temp@cnt}}{#2}{%
-      \def\rdxm@list@item{##1}%
-      %[##1]%
+  \par\renewcommand*{\do}[1]{
+    \stepcounter{rdxm@list@temp@cnt}
+    \ifnumequal{\value{rdxm@list@temp@cnt}}{#2}{
+      \def\rdxm@list@item{##1}
+      %[##1]
     }{
-      \listxadd#1{##1}%
+      \listxadd#1{##1}
     }%
   }%
   \dolistloop\rdxm@tmpa@list
 }
 
-\newcommand\rdxm@shuffle@questions{%
+\newcommand\rdxm@shuffle@questions{
   \exam@set@seed
-  \ifnumgreater{\value{question}}{2}{%
-    \gdef\rdxm@shuffle@list{}%
-    \foreach \i in {1,...,\value{question}} {\listxadd\rdxm@shuffle@list{\i}}%
-    %% 首尾两个小题的位置总要改变
-    \pgfmathrandom{2,\value{question}}%
-    \rdxm@list@remove\rdxm@shuffle@list{\pgfmathresult}%
-    \global\csletcs{rdxm@question@b@1}{rdxm@question@a@\rdxm@list@item}%
+  \ifnumgreater{\value{question}}{2}{
+    \gdef\rdxm@shuffle@list{}
+    \foreach \i in {1,...,\value{question}} {\listxadd\rdxm@shuffle@list{\i}}
+    %% always change the postions of the first and the last questions
+    \pgfmathrandom{2,\value{question}}
+    \rdxm@list@remove\rdxm@shuffle@list{\pgfmathresult}
+    \global\csletcs{rdxm@question@b@1}{rdxm@question@a@\rdxm@list@item}
     \ifnumequal{\rdxm@list@item}{\value{question}}{
-      \pgfmathrandom{\numexpr\value{question}-1\relax}%
-      \rdxm@list@remove\rdxm@shuffle@list{\pgfmathresult}%
-      \global\csletcs{rdxm@question@b@\the\value{question}}{rdxm@question@a@\rdxm@list@item}%
-    }{%
-      \pgfmathrandom{\numexpr\value{question}-2\relax}%
-      \rdxm@list@remove\rdxm@shuffle@list{\pgfmathresult}%
-      \global\csletcs{rdxm@question@b@\the\value{question}}{rdxm@question@a@\rdxm@list@item}%
-    }%
-    %% 其他小题的位置没有任何限制
-    \setcounter{rdxm@shuffle@temp@cnt}{1}%
-    \whileboolexpr{%
-      test{\ifnumless{\value{rdxm@shuffle@temp@cnt}}{\numexpr\value{question}-1\relax}}%
-    }{%
-      \stepcounter{rdxm@shuffle@temp@cnt}%
-      \pgfmathrandom{\numexpr\value{question}-\value{rdxm@shuffle@temp@cnt}\relax}%
-      \rdxm@list@remove\rdxm@shuffle@list{\pgfmathresult}%
-      \global\csletcs{rdxm@question@b@\the\value{rdxm@shuffle@temp@cnt}}{%
+      \pgfmathrandom{\numexpr\value{question}-1\relax}
+      \rdxm@list@remove\rdxm@shuffle@list{\pgfmathresult}
+      \global\csletcs{rdxm@question@b@\the\value{question}}{rdxm@question@a@\rdxm@list@item}
+    }{
+      \pgfmathrandom{\numexpr\value{question}-2\relax}
+      \rdxm@list@remove\rdxm@shuffle@list{\pgfmathresult}
+      \global\csletcs{rdxm@question@b@\the\value{question}}{rdxm@question@a@\rdxm@list@item}
+    }
+    %% no restrition for questions in the middle
+    \setcounter{rdxm@shuffle@temp@cnt}{1}
+    \whileboolexpr{
+      test{\ifnumless{\value{rdxm@shuffle@temp@cnt}}{\numexpr\value{question}-1\relax}}
+    }{
+      \stepcounter{rdxm@shuffle@temp@cnt}
+      \pgfmathrandom{\numexpr\value{question}-\value{rdxm@shuffle@temp@cnt}\relax}
+      \rdxm@list@remove\rdxm@shuffle@list{\pgfmathresult}
+      \global\csletcs{rdxm@question@b@\the\value{rdxm@shuffle@temp@cnt}}{
         rdxm@question@a@\rdxm@list@item
-      }%
-    }%
-  }{%
-    \ifnumequal{\value{question}}{2}{%
-      \global\csletcs{rdxm@question@b@1}{rdxm@question@a@2}%
-      \global\csletcs{rdxm@question@b@2}{rdxm@question@a@1}%
-    }{}%
-  }%
+      }
+    }
+  }{
+    \ifnumequal{\value{question}}{2}{
+      \global\csletcs{rdxm@question@b@1}{rdxm@question@a@2}
+      \global\csletcs{rdxm@question@b@2}{rdxm@question@a@1}
+    }{}
+  }
 }
 
-\newcommand{\printquestions}{%
-  \ifrandom
+\newcommand{\printquestions}{
+  \ifbool{exam@random}{
     \rdxm@appto@questions
     \rdxm@shuffle@questions
-    \setcounter{question}{0}%
+    \setcounter{question}{0}
     \allquestions
-  \fi
-  \xdef\allquestions{}%
-  \xdef\lastquestion{}%
+  }{}
+  \xdef\allquestions{}
+  \xdef\lastquestion{}
 }
-
-\newcounter{rdxm@part}
 
 \DeclareExamTemplate{exampart}{normal}{
   \noindent
   \textbf{
-    \textcolor{part~number}{\UseExamTranslation{exampart-Part}~\Roman{rdxm@part}}
+    \textcolor{part~number}{
+      \MakeExamNameNumber{\UseExamTranslation{exampart-Part}}{\TheExamCounter{exampart}}
+    }
     :~\UseExamValue{exampart}{type}
   }
   \space(\UseExamValue{exampart}{points})
@@ -513,21 +590,21 @@
   \printquestions
   \setcounter{totalquestions}{\value{totalquestions}+\value{question}}
   \setcounter{question}{0}
-  \stepcounter{rdxm@part}
+  \stepcounter{exampart}
   \vspace{1em}
   \begingroup
-  \DeclareExamValue{exampart}{type}{#1}
-  \DeclareExamValue{exampart}{points}{#2}
+  \SetExamValue{exampart}{type=#1,points=#2}
   \UseExamTemplate{exampart}{default}
   \endgroup
   \par\nopagebreak
   \if\relax\detokenize{#1}\relax % #1 is empty
-    \onlyonequestiontrue
+    \booltrue{exam@onlyonequestion}
   \else
-    \onlyonequestionfalse
-    \vspace{1em}%
+    \boolfalse{exam@onlyonequestion}
+    \vspace{1em}
   \fi
-  %其中设定了\@nobreaktrue，保证在列表前也不分页，详情见 source2e
+  % \@afterheading sets \@nobreaktrue, which will prevent page breaks before lists;
+  % see source2e
   \@afterheading
 }
 
@@ -542,7 +619,7 @@
 
 \NewDocumentCommand\examdata{+m}{
   \printquestions\rdxm@stop@random
-  \DeclareExamValue{examdata}{caption}{#1}
+  \SetExamValue{examdata}{caption=#1}
   \UseExamTemplate{examdata}{default}
 }
 
@@ -550,12 +627,7 @@
 
 \newcommand\ignorepars{\@ifnextchar\par{\expandafter\ignorepars\@gobble}{}}
 
-% local definition, valid only in current question
-\DeclareKeys[randexam-question]{
-   points .store = \l@rdxm@question@points
-  ,level  .store = \l@rdxm@question@level
-  ,year   .store = \l@rdxm@question@year
-}
+\rdxm@declare@key@handler{question}
 
 \newcommand\pointorpoints[1]{
   \ifnumgreater{#1}{1}{
@@ -565,26 +637,28 @@
   }
 }
 
-\newcommand{\questionpointstext}[1]{ (#1 \pointorpoints{#1}) }
+\newcommand{\questionpointstext}[1]{ (#1~\pointorpoints{#1}) }
 
 \newcommand\rdxm@hook@exec@other@keys{}
 
 \newrobustcmd\execute@question@keys{
   \rdxm@hook@exec@other@keys
-  \ifdefvoid{\l@rdxm@question@points}{}{\questionpointstext{\l@rdxm@question@points}}
+  \IfExamValueExistT{question}{points}{
+    \questionpointstext{\UseExamValue{question}{points}}
+  }
 }
 
 \DeclareExamTemplate{questionbegin}{normal}{
-  \ifresetnumber
-    \ifonlyonequestion
-      \renewcommand{\hangtext}{\qquad}%
-    \else
+  \ifbool{exam@resetnumber}{
+    \ifbool{exam@onlyonequestion}{
+      \renewcommand{\hangtext}{\qquad}
+    }{
       \renewcommand{\hangtext}{\textbf{\textsf{\textcolor{question~number}{\arabic{question}}.}}\;\,}
-    \fi
-  \else
-    \setcounter{questionreal}{\value{totalquestions}+\value{question}}%
+    }
+  }{
+    \setcounter{questionreal}{\value{totalquestions}+\value{question}}
     \renewcommand{\hangtext}{\textbf{\textsf{\textcolor{question~number}{\arabic{questionreal}}.}}\;\,}
-  \fi
+  }
   \settowidth{\hanglength}{\hangtext}
   \description[leftmargin=\hanglength,labelwidth=0pt,labelsep=0pt,topsep=0pt,parsep=0pt]
   \item[\hangtext]\execute@question@keys
@@ -597,7 +671,7 @@
 \NewDocumentEnvironment{questionreal}{O{}}{
   \stepcounter{question}
   \setcounter{choice}{0}
-  \SetKeys[randexam-question]{#1}
+  \SetKeys[randexam/question]{#1}
   \UseExamTemplate{questionbegin}{default}
 }{
   \UseExamTemplate{questionend}{default}
@@ -628,30 +702,30 @@
 \let \oldmedskip   = \medskip
 \let \oldbigskip   = \bigskip
 
-\ifrandom
-  \newcommand\rdxm@appto@questions{%
-    \xappto\allquestions{\expandonce\lastquestion}%
-  }%
-  \NewEnviron{question}{%
-    \stepcounter{question}%
-    \rdxm@appto@questions
-    \csxdef{rdxm@question@a@\the\value{question}}{%
-      \unexpanded{\begin{questionreal}}%
-      \unexpanded\expandafter{\BODY}%
-      \unexpanded{\end{questionreal}}%
-    }%
-    \csxdef{rdxm@question@b@\the\value{question}}{%
-      \expandonce{\csname rdxm@question@a@\the\value{question}\endcsname}%
-    }%
-    \xdef\lastquestion{%
-      \expandonce{\csname rdxm@question@b@\the\value{question}\endcsname}%
-    }%
+\ifbool{exam@random}{
+  \newcommand\rdxm@appto@questions{
+    \xappto\allquestions{\expandonce\lastquestion}
   }
-  \NewEnviron{solution}{%
-    \csxappto{rdxm@question@a@\the\value{question}}{%
-      \unexpanded{\begin{solutionreal}}%
-      \expandonce{\BODY}%
-      \unexpanded{\end{solutionreal}}%
+  \NewEnviron{question}{
+    \stepcounter{question}
+    \rdxm@appto@questions
+    \csxdef{rdxm@question@a@\the\value{question}}{
+      \unexpanded{\begin{questionreal}}
+      \unexpanded\expandafter{\BODY}
+      \unexpanded{\end{questionreal}}
+    }
+    \csxdef{rdxm@question@b@\the\value{question}}{
+      \expandonce{\csname rdxm@question@a@\the\value{question}\endcsname}
+    }
+    \xdef\lastquestion{
+      \expandonce{\csname rdxm@question@b@\the\value{question}\endcsname}
+    }
+  }
+  \NewEnviron{solution}{
+    \csxappto{rdxm@question@a@\the\value{question}}{
+      \unexpanded{\begin{solutionreal}}
+      \expandonce{\BODY}
+      \unexpanded{\end{solutionreal}}
     }%
   }
   \renewcommand{\newpage}{\gappto\lastquestion{\oldnewpage}}
@@ -659,54 +733,47 @@
   \renewcommand{\smallskip}{\csgappto{rdxm@question@a@\the\value{question}}{\oldsmallskip}}
   \renewcommand{\medskip}{\csgappto{rdxm@question@a@\the\value{question}}{\oldmedskip}}
   \renewcommand{\bigskip}{\csgappto{rdxm@question@a@\the\value{question}}{\oldbigskip}}
-\else
+}{
   \newenvironment{question}[1][]{\questionreal[#1]}{\endquestionreal}
   %\newenvironment{solution}{\solutionreal}{\endsolutionreal}
   \NewEnviron{solution}{\begin{solutionreal}\BODY\end{solutionreal}}
-\fi
+}
 
-\newcommand{\rdxm@stop@random}{%
-  \ifrandom
-    \renewenvironment{question}{\questionreal}{\endquestionreal}%
-    \renewenvironment{solution}{\solutionreal}{\endsolutionreal}%
+\newcommand{\rdxm@stop@random}{
+  \ifbool{exam@random}{
+    \renewenvironment{question}{\questionreal}{\endquestionreal}
+    \renewenvironment{solution}{\solutionreal}{\endsolutionreal}
     \let \newpage   = \oldnewpage
     \let \vfill     = \oldvfill
     \let \smallskip = \oldsmallskip
     \let \medskip   = \oldmedskip
     \let \bigskip   = \oldbigskip
-  \fi
+  }{}
 }
 
 \def\CommentCutFile{\jobname.cut}
 
-\AtBeginDocument{%
-  \ifanswer\else
-    \excludecomment{solution}
-  \fi
+\AtBeginDocument{
+  \ifbool{exam@answer}{}{\excludecomment{solution}}
 }
 
 %% ---------------------------------------------------------------------------
 %% Command for answer tables: \answertable
 %% ---------------------------------------------------------------------------
 
-%% property .store is the same as .tl_set:N in ltkeys.
-%% you need to put .code before .initial:n.
 %% total: total number of questions in current exam part;
 %% column: number of questions in each answer row;
 %% strut: strut height in each answer rows;
 %% notice: notice text before the answer table.
-\DeclareKeys[randexam-answertable]{
-   total  .code      = \DeclareExamValue{answertable}{total}{#1}
-  ,column .code      = \DeclareExamValue{answertable}{column}{#1}
-  ,strut  .code      = \DeclareExamValue{answertable}{strut}{#1}
-  ,strut  .initial:n = 1em
-  ,notice .code      = \DeclareExamValue{answertable}{notice}{#1}
-  ,notice .initial:n = {Notice:~you~MUST~write~the~answers~in~the~following~tables.}
+\rdxm@declare@key@handler{answertable}
+\SetKeys[randexam/answertable]{
+   strut  = 1em
+  ,notice = {Notice:~you~MUST~write~the~answers~in~the~following~tables.}
 }
 
-\gdef\answer@lines@temp{}%
-\newcommand{\answer@lines@add}[1]{%
-  \xdef\answer@lines@temp{\answer@lines@temp#1}%
+\gdef\answer@lines@temp{}
+\newcommand{\answer@lines@add}[1]{
+  \xdef\answer@lines@temp{\answer@lines@temp#1}
 }
 
 \newrobustcmd\answer@number@hided[1]{\UseExamTranslation{answertable-Number}}
@@ -719,38 +786,39 @@
 \newcounter{answer@total}
 
 %% #1: strut; #2: total; #3: column.
-\newcommand{\answer@lines}[3]{%
-  \setcounter{answer@row}{(#2-1)/#3+1}% 除法向下取整，改为向上取整
+\newcommand{\answer@lines}[3]{
+  % change rounding down to rounding up in the division
+  \setcounter{answer@row}{(#2-1)/#3+1}
   \begingroup
-  \let\hline=\relax  \let\\=\relax % 禁止展开
-  \gdef\answer@lines@temp{}%
-  \setcounter{answer@total}{1}%
+  \let\hline=\relax  \let\\=\relax % forbid expansions
+  \gdef\answer@lines@temp{}
+  \setcounter{answer@total}{1}
   \whileboolexpr{
       test{\ifnumgreater{\value{answer@row}}{0}}
-  }{%
-      \addtocounter{answer@row}{-1}%
-      \answer@lines@add{\answer@number@hided}%
-      \setcounter{answer@col}{1}%
-      \unlessboolexpr{%
-          test{\ifnumgreater{\value{answer@col}}{#3}}%
-      }{%
-          \answer@lines@add{&}%
-          \ifnumgreater{\value{answer@total}}{#2}{}{%
-            \answer@lines@add{\arabic{answer@total}}%
-          }%
-          \stepcounter{answer@col}%
-          \stepcounter{answer@total}%
-      }%
-      \answer@lines@add{\\ \hline \answer@cell@strut{#1}}%
-      \setcounter{answer@col}{1}%
+  }{
+      \addtocounter{answer@row}{-1}
+      \answer@lines@add{\answer@number@hided}
+      \setcounter{answer@col}{1}
       \unlessboolexpr{
           test{\ifnumgreater{\value{answer@col}}{#3}}
-      }{%
-          \answer@lines@add{&}%
-          \stepcounter{answer@col}%
-      }%
-      \answer@lines@add{\\ \hline}%
-  }%
+      }{
+          \answer@lines@add{&}
+          \ifnumgreater{\value{answer@total}}{#2}{}{
+            \answer@lines@add{\arabic{answer@total}}
+          }
+          \stepcounter{answer@col}
+          \stepcounter{answer@total}
+      }
+      \answer@lines@add{\\ \hline \answer@cell@strut{#1}}
+      \setcounter{answer@col}{1}
+      \unlessboolexpr{
+          test{\ifnumgreater{\value{answer@col}}{#3}}
+      }{
+          \answer@lines@add{&}
+          \stepcounter{answer@col}
+      }
+      \answer@lines@add{\\ \hline}
+  }
   \endgroup
   \answer@lines@temp
 }
@@ -767,7 +835,7 @@
 
 \NewDocumentCommand\answertable{O{}}{
   \begingroup
-  \SetKeys[randexam-answertable]{#1}
+  \SetKeys[randexam/answertable]{#1}
   \UseExamTemplate{answertable}{default}
   \endgroup
   \par\vspace{0.8em}
@@ -780,7 +848,7 @@
 %% Command for multiple-choice questions: \pickin and \pickout
 %% ---------------------------------------------------------------------------
 
-\newcommand{\answer}[1]{\ifanswer#1\else\phantom{#1}\fi}
+\newcommand{\answer}[1]{\ifbool{exam@answer}{#1}{\phantom{#1}}}
 
 \newcommand*{\cdotfill}{\leavevmode\xleaders\hbox to 0.5em{\hss$\cdot$\hss}\hfill\kern0pt\relax}
 
@@ -798,18 +866,19 @@
 \newcommand*{\fillout}[1]{\allowbreak\hbox{}\nobreak\ulinefill{#1}\underline{\color{blue}\answer{#1}}\ulinefill{#1}}
 \newcommand*{\fillin}[1]{\underline{\hspace{1em}\color{blue}\minwidthbox{2em}{\answer{#1}}\hspace{1em}}}
 
-\newcommand*\pickoutreal[1]{%
-  \unskip\nobreak\cdotfill(\makebox[1.5em]{\color{blue}\answer{#1}})%
+\newcommand*\pickoutreal[1]{
+  \unskip\nobreak\cdotfill(\makebox[1.5em]{\color{blue}\answer{#1}})
 }
-\newcommand*\pickinreal[1]{%
+\newcommand*\pickinreal[1]{
   \unskip\nobreak
-  \hspace{0.3em}(\makebox[1.5em]{\color{blue}\answer{#1}})\hspace{0.3em}%
+  \hspace{0.3em}(\makebox[1.5em]{\color{blue}\answer{#1}})\hspace{0.3em}
   \ignorespaces
 }
 
-%% 选择题四个选项打乱顺序，用三种方法即可保证答案不同
+%% We choose three ways for shuffling four choices in a multiple-choice question
 %% 1：ABCD -> CDAB； 2：ABCD -> BADC; 3: ABCD -> DCBA
-%% 即在两行排列时仅用到上下交换以及左右交换，这样可以保持两行长度不变
+%% In other word, we only exchange choices in the same row or column,
+%% so as to make the lengths of choice lines unchanged
 
 \csdef{rdxm@shuffle@1@A}{C} \csdef{rdxm@shuffle@2@A}{B} \csdef{rdxm@shuffle@3@A}{D}
 \csdef{rdxm@shuffle@1@B}{D} \csdef{rdxm@shuffle@2@B}{A} \csdef{rdxm@shuffle@3@B}{C}
@@ -819,33 +888,33 @@
 \def\@rdxm@choice@random{0}
 \newcommand\rdxm@shuffle@abcd[1]{\csuse{rdxm@shuffle@\@rdxm@choice@random @#1}}
 
-\newcommand*\pickout[1]{%
-  \ifbool{random}{%
+\newcommand*\pickout[1]{
+  \ifbool{exam@random}{
     \exam@set@seed
-    \pgfmathrandominteger\@rdxm@choice@random{1}{3}%
+    \pgfmathrandominteger\@rdxm@choice@random{1}{3}
     %\@rdxm@choice@random
-    \pickoutreal{\rdxm@shuffle@abcd{#1}}%
-  }{%
-    \pickoutreal{#1}%
-  }%
+    \pickoutreal{\rdxm@shuffle@abcd{#1}}
+  }{
+    \pickoutreal{#1}
+  }
 }
-\newcommand*\pickoutfixed[1]{%
-  \pickoutreal{#1}%
-  \randomfalse
+\newcommand*\pickoutfixed[1]{
+  \pickoutreal{#1}
+  \boolfalse{exam@random}
 }
-\newcommand*\pickin[1]{%
-  \ifbool{random}{%
+\newcommand*\pickin[1]{
+  \ifbool{exam@random}{
     \exam@set@seed
-    \pgfmathrandominteger\@rdxm@choice@random{1}{3}%
+    \pgfmathrandominteger\@rdxm@choice@random{1}{3}
     %\@rdxm@choice@random
-    \pickinreal{\rdxm@shuffle@abcd{#1}}%
-  }{%
-    \pickinreal{#1}%
-  }%
+    \pickinreal{\rdxm@shuffle@abcd{#1}}
+  }{
+    \pickinreal{#1}
+  }
 }
-\newcommand*\pickinfixed[1]{%
-  \pickinreal{#1}%
-  \randomfalse
+\newcommand*\pickinfixed[1]{
+  \pickinreal{#1}
+  \boolfalse{exam@random}
 }
 
 %% ---------------------------------------------------------------------------
@@ -856,17 +925,17 @@
 \newlength{\rdxm@item@len}
 \newlength{\rdxm@label@len}
 
-\newcommand\rdxm@item@temp{%
-  \unskip\cr\stepcounter{choice}(\Alph{choice})\ %
+\newcommand\rdxm@item@temp{
+  \unskip\cr\stepcounter{choice}(\Alph{choice})\ 
 }
-\newcommand\rdxm@item@box{%
+\newcommand\rdxm@item@box{
   \hfill\egroup\hfill\hbox to \rdxm@item@len\bgroup
   \stepcounter{choice}(\Alph{choice})\ \ignorespaces
 }
-\newcommand\rdxm@item@par{%
-  \stepcounter{choice}%
-  \def\rdxm@label@text{(\Alph{choice})\ }%
-  \settowidth{\rdxm@label@len}{\rdxm@label@text}%
+\newcommand\rdxm@item@par{
+  \stepcounter{choice}
+  \def\rdxm@label@text{(\Alph{choice})\ }
+  \settowidth{\rdxm@label@len}{\rdxm@label@text}
   \par \parshape 2 \hanglength \linewidth
   \dimexpr\hanglength + \rdxm@label@len\relax
   \dimexpr\linewidth - \rdxm@label@len\relax
@@ -875,87 +944,87 @@
 
 \NewEnviron{abcdreal}{
   \unskip
-  \setlength{\parindent}{0pt}%
-  \setlength{\parskip}{0pt}%
-  \setcounter{choice}{0}%
+  \setlength{\parindent}{0pt}
+  \setlength{\parskip}{0pt}
+  \setcounter{choice}{0}
   \let\item=\rdxm@item@temp
-  \settowidth{\rdxm@item@len}{\vbox{\halign{##\hfil\cr\BODY\crcr}}}%
-  \setcounter{choice}{0}%
+  \settowidth{\rdxm@item@len}{\vbox{\halign{##\hfil\cr\BODY\crcr}}}
+  \setcounter{choice}{0}
   \ifdim\rdxm@item@len>0.486\linewidth
-    \setlength{\rdxm@item@len}{\linewidth}%
+    \setlength{\rdxm@item@len}{\linewidth}
     \let\item=\rdxm@item@par
     \BODY\par
   \else
     \ifdim\rdxm@item@len>.243\linewidth
-      \setlength{\rdxm@item@len}{0.5\linewidth}%
+      \setlength{\rdxm@item@len}{0.5\linewidth}
     \else
-      \setlength{\rdxm@item@len}{0.25\linewidth}%
+      \setlength{\rdxm@item@len}{0.25\linewidth}
     \fi
     \let\item=\rdxm@item@box
     \par\bgroup\BODY\hfill\egroup\par
   \fi
 }
 
-\newcommand\rdxm@item@one@line{%
+\newcommand\rdxm@item@one@line{
   \unskip
   \ifnumequal{\value{choice}}{0}{}{\hfill}
-  \stepcounter{choice}(\Alph{choice})\ %
+  \stepcounter{choice}(\Alph{choice})\ 
 }
-\newcommand\rdxm@item@two@line{%
+\newcommand\rdxm@item@two@line{
   \unskip
-  \ifnumodd{\value{choice}}{&}{\unskip\cr}%
-  \stepcounter{choice}(\Alph{choice})\ %
+  \ifnumodd{\value{choice}}{&}{\unskip\cr}
+  \stepcounter{choice}(\Alph{choice})\ 
 }
 
 \NewEnviron{abcd*real}{
   \unskip
-  \setlength{\parindent}{0pt}%
-  \setlength{\parskip}{0pt}%
-  \setcounter{choice}{0}%
+  \setlength{\parindent}{0pt}
+  \setlength{\parskip}{0pt}
+  \setcounter{choice}{0}
   \let\item=\rdxm@item@one@line
-  \settowidth{\rdxm@item@len}{\BODY}%
+  \settowidth{\rdxm@item@len}{\BODY}
   \ifdim\rdxm@item@len<0.95\linewidth
-    \setcounter{choice}{0}%
+    \setcounter{choice}{0}
     \par\bgroup\BODY\hfill\hfill\par\egroup\par
   \else
-    \setcounter{choice}{0}%
+    \setcounter{choice}{0}
     \let\item=\rdxm@item@two@line
-    \settowidth{\rdxm@item@len}{\vbox{\halign{##&##\hfil\cr\BODY\crcr}}}%
+    \settowidth{\rdxm@item@len}{\vbox{\halign{##&##\hfil\cr\BODY\crcr}}}
     \ifdim\rdxm@item@len<0.975\linewidth
-      \setcounter{choice}{0}%
+      \setcounter{choice}{0}
       \par\bgroup\nointerlineskip
-      \vbox{\halign to\linewidth{##\hfil\tabskip=0pt plus 1fil&##\hfil\cr\BODY\crcr}}%
+      \vbox{\halign to\linewidth{##\hfil\tabskip=0pt plus 1fil&##\hfil\cr\BODY\crcr}}
       \egroup\par
     \else
-      \setcounter{choice}{0}%
+      \setcounter{choice}{0}
       \let\item=\rdxm@item@par
       \par\bgroup\BODY\hfill\egroup\par
     \fi
   \fi
 }
 
-\ifbool{random}{%
+\ifbool{exam@random}{
   \csdef{rdxm@swap@items@1}#1#2#3#4{\item#3\item#4\item#1\item#2}
   \csdef{rdxm@swap@items@2}#1#2#3#4{\item#2\item#1\item#4\item#3}
   \csdef{rdxm@swap@items@3}#1#2#3#4{\item#4\item#3\item#2\item#1}
-  \long\def\rdxm@swap@items#1\item#2\item#3\item#4\item#5\@rdxm@stop@mark{%
-    #1\csuse{rdxm@swap@items@\@rdxm@choice@random}{#2}{#3}{#4}{#5}%
+  \long\def\rdxm@swap@items#1\item#2\item#3\item#4\item#5\@rdxm@stop@mark{
+    #1\csuse{rdxm@swap@items@\@rdxm@choice@random}{#2}{#3}{#4}{#5}
   }
 }{}
 
-\NewDocumentEnvironment{abcd}{+b}{%
-  \ifbool{random}{%
-    \begin{abcdreal}\rdxm@swap@items#1\@rdxm@stop@mark\end{abcdreal}%
-  }{%
-    \begin{abcdreal}#1\end{abcdreal}%
-  }%
+\NewDocumentEnvironment{abcd}{+b}{
+  \ifbool{exam@random}{
+    \begin{abcdreal}\rdxm@swap@items#1\@rdxm@stop@mark\end{abcdreal}
+  }{
+    \begin{abcdreal}#1\end{abcdreal}
+  }
 }{}
-\NewDocumentEnvironment{abcd*}{+b}{%
-  \ifbool{random}{%
-    \begin{abcd*real}\rdxm@swap@items#1\@rdxm@stop@mark\end{abcd*real}%
-  }{%
-    \begin{abcd*real}#1\end{abcd*real}%
-  }%
+\NewDocumentEnvironment{abcd*}{+b}{
+  \ifbool{exam@random}{
+    \begin{abcd*real}\rdxm@swap@items#1\@rdxm@stop@mark\end{abcd*real}
+  }{
+    \begin{abcd*real}#1\end{abcd*real}
+  }
 }{}
 
 %% ---------------------------------------------------------------------------
@@ -971,8 +1040,8 @@
 %% Use freealign package to align math formulas in different lines
 %% ---------------------------------------------------------------------------
 
-\AtBeginDocument{%
-  \ifbool{freealign}{\RequirePackage{freealign}}{}%
+\AtBeginDocument{
+  \ifbool{exam@freealign}{\RequirePackage{freealign}}{}
 }
 
 %% ---------------------------------------------------------------------------
@@ -982,31 +1051,31 @@
 \PassOptionsToPackage{tbtags}{amsmath}
 \RequirePackage{amsmath}
 
-\newcommand{\solutionpointstext}[1]{%
-  \textcolor{red}{#1\kern0.15em\pointorpoints{#1}}%
+\newcommand{\solutionpointstext}[1]{
+  \textcolor{red}{#1\kern0.15em\pointorpoints{#1}}
 }
 
-\newcommand{\pointstext}[1]{%
-  \mbox{}\nobreak\hfill$\cdots\cdots$\solutionpointstext{#1}%
+\newcommand{\pointstext}[1]{
+  \mbox{}\nobreak\hfill$\cdots\cdots$\solutionpointstext{#1}
   \par\noindent\ignorespaces
 }
 \newcommand{\pointseqno}[1]{\eqno{\cdots\cdots\text{\solutionpointstext{#1}}}}
 \newcommand{\pointstag}[1]{\tag*{$\cdots\cdots$\solutionpointstext{#1}}}
 
-\newrobustcmd{\points}[1]{%
-  \ifbool{mmode}{%
-    \ifdefstrequal{\tag}{\dft@tag}{\pointseqno{#1}}{\pointstag{#1}}%
-  }{%
-    \pointstext{#1}%
-  }%
+\newrobustcmd{\points}[1]{
+  \ifbool{mmode}{
+    \ifdefstrequal{\tag}{\dft@tag}{\pointseqno{#1}}{\pointstag{#1}}
+  }{
+    \pointstext{#1}
+  }
 }
 
 %% ---------------------------------------------------------------------------
 %% Use medium-size fractions and operators in both inline and displayed formulas
 %% ---------------------------------------------------------------------------
 
-\AtBeginDocument{%
-  \ifbool{medmath}{\RequirePackage{medmath}}{}%
+\AtBeginDocument{
+  \ifbool{exam@medmath}{\RequirePackage{medmath}}{}
 }
 
 %% ---------------------------------------------------------------------------
@@ -1022,150 +1091,268 @@
 
 \setlength\arraycolsep{4pt}
 
-\RequirePackage{diagbox}
-%% 修正 \diagbox 在 array 环境中使用的问题
-\newrobustcmd{\diagboxtwo}[3][]{%
-  \ifbool{mmode}{%
-    \hbox{\let\tabcolsep=\arraycolsep\diagbox[#1]{$#2$}{$#3$}}%
-  }{%
-    \diagbox[#1]{#2}{#3}%
+\newrobustcmd\rdxm@moremath@diagbox{
+  \RequirePackage{diagbox}
+  %% Fix problem in using \diagbox in array environment
+  \newrobustcmd{\diagboxtwo}[3][]{
+    \ifbool{mmode}{
+      \hbox{\let\tabcolsep=\arraycolsep\diagbox[##1]{$##2$}{$##3$}}
+    }{
+      \diagbox[##1]{##2}{##3}
+    }
+  }
+  \newrobustcmd{\diagboxthree}[4][]{
+    \ifbool{mmode}{
+      \hbox{\let\tabcolsep=\arraycolsep\diagbox[##1]{$##2$}{$##3$}{$##4$}}
+    }{
+      \diagbox[##1]{##2}{##3}{##4}
+    }
   }
 }
-\newrobustcmd{\diagboxthree}[4][]{%
-  \ifbool{mmode}{%
-    \hbox{\let\tabcolsep=\arraycolsep\diagbox[#1]{$#2$}{$#3$}{$#4$}}%
-  }{%
-    \diagbox[#1]{#2}{#3}{#4}%
+
+\newrobustcmd\rdxm@moremath@limits{
+  \AtBeginDocument{
+    \let\rdxm@saved@lim=\lim    \def\lim{\rdxm@saved@lim\limits}
+    \let\rdxm@saved@sum=\sum    \def\sum{\rdxm@saved@sum\limits}
+    \let\rdxm@saved@prod=\prod  \def\prod{\rdxm@saved@prod\limits}
   }
 }
 
-\RequirePackage{mathtools} % \mathllap 命令，pmatrix* 环境等
-\RequirePackage{extarrows}
-
-\AtBeginDocument{%
-  \let\rdxm@saved@lim=\lim    \def\lim{\rdxm@saved@lim\limits}%
-  \let\rdxm@saved@sum=\sum    \def\sum{\rdxm@saved@sum\limits}%
-  \let\rdxm@saved@prod=\prod  \def\prod{\rdxm@saved@prod\limits}%
+\newrobustcmd\rdxm@moremath@differential{
+  \newcommand{\diff}{\mathop{}\!\mathrm{d}}
+  \newcommand{\dx}{\diff x}
+  \newcommand{\dy}{\diff y}
+  \def\dz{\diff z} % not sure whether it has been defined
+  \newcommand{\du}{\diff u}
+  \newcommand{\dv}{\diff v}
+  \newcommand{\dr}{\diff r}
+  \newcommand{\ds}{\diff s}
+  \newcommand{\dt}{\diff t}
+  \newcommand{\dS}{\diff S}
+  %% Some packages such as hyperref will modify the definition of \d,
+  %% so we put the code in \AtBeginDocument.
+  %% Also we define \d as a protected command, so as to avoid wrong expansions of
+  %% it at the beginning of math arrays such as align from amsmath package.
+  \AtBeginDocument{
+    \let\oldd=\d
+    \renewrobustcmd{\d}{\ifbool{mmode}{\diff}{\oldd}}
+  }
+  \let\pd=\partial
+  \newcommand{\pdf}{\pd f}
+  \newcommand{\pdg}{\pd g}
+  \newcommand{\pdh}{\pd h}
+  \newcommand{\pdl}{\pd l}
+  \newcommand{\pdn}{\pd n}
+  \newcommand{\pdu}{\pd u}
+  \newcommand{\pdv}{\pd v}
+  \newcommand{\pdx}{\pd x}
+  \newcommand{\pdy}{\pd y}
+  \newcommand{\pdz}{\pd z}
+  \newcommand{\pdF}{\pd F}
+  \newcommand{\pdL}{\pd L}
+  \newcommand{\pdP}{\pd P}
+  \newcommand{\pdQ}{\pd Q}
+  \newcommand{\pdR}{\pd R}
 }
 
-\newcommand{\e}{\mathrm{e}}
-\newcommand{\R}{\mathbb{R}}
-
-\DeclareMathOperator{\arccot}{arccot}
-\DeclareMathOperator{\Corr}{\rho}
-\DeclareMathOperator{\Cov}{Cov}
-\DeclareMathOperator{\diag}{diag}
-\DeclareMathOperator{\grad}{grad}
-\DeclareMathOperator{\Prj}{Prj}
-\DeclareMathOperator{\tr}{tr}
-\DeclareMathOperator{\Var}{Var}
-
-\DeclareMathOperator{\diver}{div}
-\let\division=\div
-\let\div=\diver
-
-\newcommand{\diff}{\mathop{}\!\mathrm{d}}
-\newcommand{\dx}{\diff x}
-\newcommand{\dy}{\diff y}
-\def\dz{\diff z} % 不确定命令是否已经定义
-\newcommand{\du}{\diff u}
-\newcommand{\dv}{\diff v}
-\newcommand{\dr}{\diff r}
-\newcommand{\ds}{\diff s}
-\newcommand{\dt}{\diff t}
-\newcommand{\dS}{\diff S}
-% 有些宏包比如 hyperref 会修改 \d 的定义，所以放在 document 开始处
-% 利用 etoolbox 将 \d 定义为健壮命令，以避免在 align 等环境中错误地展开
-\AtBeginDocument{%
-  \let\oldd=\d
-  \renewrobustcmd{\d}{\ifbool{mmode}{\diff}{\oldd}}%
+\newrobustcmd\rdxm@moremath@widebar{
+  %% from mathabx package
+  \DeclareFontFamily{U}{mathx}{\hyphenchar\font45}
+  \DeclareFontShape{U}{mathx}{m}{n}{<-> mathx10}{}
+  \DeclareSymbolFont{mathx}{U}{mathx}{m}{n}
+  \DeclareMathAccent{\widebar}{0}{mathx}{"73}
 }
 
-\let\pd=\partial
-\newcommand{\pdf}{\pd f}
-\newcommand{\pdg}{\pd g}
-\newcommand{\pdh}{\pd h}
-\newcommand{\pdl}{\pd l}
-\newcommand{\pdn}{\pd n}
-\newcommand{\pdu}{\pd u}
-\newcommand{\pdv}{\pd v}
-\newcommand{\pdx}{\pd x}
-\newcommand{\pdy}{\pd y}
-\newcommand{\pdz}{\pd z}
-\newcommand{\pdF}{\pd F}
-\newcommand{\pdL}{\pd L}
-\newcommand{\pdP}{\pd P}
-\newcommand{\pdQ}{\pd Q}
-\newcommand{\pdR}{\pd R}
-
-% from mathabx package
-\DeclareFontFamily{U}{mathx}{\hyphenchar\font45}
-\DeclareFontShape{U}{mathx}{m}{n}{<-> mathx10}{}
-\DeclareSymbolFont{mathx}{U}{mathx}{m}{n}
-\DeclareMathAccent{\widebar}{0}{mathx}{"73}
-
-\newcommand{\va}{\vec{a}}
-\newcommand{\vb}{\vec{b}}
-\newcommand{\vc}{\vec{c}}
-\newcommand{\vd}{\vec{d}}
-\newcommand{\ve}{\vec{e}}
-\newcommand{\vi}{\vec{i}}
-\newcommand{\vj}{\vec{j}}
-\newcommand{\vk}{\vec{k}}
-\newcommand{\vn}{\vec{n}}
-\newcommand{\vs}{\vec{s}}
-\newcommand{\vv}{\vec{v}}
-
-\let\ov=\overrightarrow
-
-\let\le=\leqslant
-\let\ge=\geqslant
-
-\let\lb=\{
-\let\rb=\}
-
-\def\T{\mathrm{T}\kern-.5pt}
-
-% 分数线长一点的分数，\wfrac[2pt]{x}{y} 表示左右加 2pt
-% 和前面的 medmath 一样，将代码放在 \AtBeginDocument 里
-\AtBeginDocument{%
-  \newrobustcmd{\wfrac}[3][2pt]{%
-    \frac{\hspace{#1}#2\hspace{#1}}{\hspace{#1}#3\hspace{#1}}%
-  }%
-  \newrobustcmd{\wdfrac}[3][2pt]{%
-    \dfrac{\hspace{#1}#2\hspace{#1}}{\hspace{#1}#3\hspace{#1}}%
-  }%
-  \newrobustcmd{\wtfrac}[3][2pt]{%
-    \tfrac{\hspace{#1}#2\hspace{#1}}{\hspace{#1}#3\hspace{#1}}%
-  }%
+\newrobustcmd\rdxm@moremath@vector{
+  \newcommand{\va}{\vec{a}}
+  \newcommand{\vb}{\vec{b}}
+  \newcommand{\vc}{\vec{c}}
+  \newcommand{\vd}{\vec{d}}
+  \newcommand{\ve}{\vec{e}}
+  \newcommand{\vi}{\vec{i}}
+  \newcommand{\vj}{\vec{j}}
+  \newcommand{\vk}{\vec{k}}
+  \newcommand{\vn}{\vec{n}}
+  \newcommand{\vs}{\vec{s}}
+  \newcommand{\vv}{\vec{v}}
 }
 
-% 使用 stix font 中的 white arrows
-\AtBeginDocument{\@ifpackageloaded{fontspec}{%
+\newrobustcmd\rdxm@moremath@widefrac{
+  %% Longer fraction rules, \wfrac[2pt]{x}{y} will add 2pt to the left and right
+  \AtBeginDocument{
+    \newrobustcmd{\wfrac}[3][2pt]{
+      \frac{\hspace{##1}##2\hspace{##1}}{\hspace{##1}##3\hspace{##1}}
+    }
+    \newrobustcmd{\wdfrac}[3][2pt]{
+      \dfrac{\hspace{##1}##2\hspace{##1}}{\hspace{##1}##3\hspace{##1}}
+    }
+    \newrobustcmd{\wtfrac}[3][2pt]{
+      \tfrac{\hspace{##1}##2\hspace{##1}}{\hspace{##1}##3\hspace{##1}}
+    }
+  }
+}
+
+\newrobustcmd\rdxm@moremath@whitearrow{
+  %% 使用 stix font 中的 white arrows
+  \AtBeginDocument{\@ifpackageloaded{fontspec}{
     %\IfFileExists{STIX-Regular.otf}{% 在 TeXLive 中无效
-    \IfFileExists{stix.sty}{%
-        \newfontfamily{\@rdxm@stix}{STIX} % stix v1.1
-    }{%
-        \newfontfamily{\@rdxm@stix}{STIXGeneral} % stix v1.0
+    \IfFileExists{stix.sty}{
+      \newfontfamily{\@rdxm@stix}{STIX} % stix v1.1
+    }{
+      \newfontfamily{\@rdxm@stix}{STIXGeneral} % stix v1.0
     }
-    \newrobustcmd\leftwhitearrow{%
-      \mathrel{\text{\normalfont\@rdxm@stix\symbol{"21E6}}}%
+    \newrobustcmd\leftwhitearrow{
+      \mathrel{\text{\normalfont\@rdxm@stix\symbol{"21E6}}}
     }
-    \newrobustcmd\upwhitearrow{%
-      \mathrel{\text{\normalfont\@rdxm@stix\symbol{"21E7}}}%
+    \newrobustcmd\upwhitearrow{
+      \mathrel{\text{\normalfont\@rdxm@stix\symbol{"21E7}}}
     }
-    \newrobustcmd\rightwhitearrow{%
-      \mathrel{\text{\normalfont\@rdxm@stix\symbol{"21E8}}}%
+    \newrobustcmd\rightwhitearrow{
+      \mathrel{\text{\normalfont\@rdxm@stix\symbol{"21E8}}}
     }
-    \newrobustcmd\downwhitearrow{%
-      \mathrel{\text{\normalfont\@rdxm@stix\symbol{"21E9}}}%
+    \newrobustcmd\downwhitearrow{
+      \mathrel{\text{\normalfont\@rdxm@stix\symbol{"21E9}}}
     }
-}{%
+  }{
     \let \leftwhitearrow = \Leftarrow
     \let \rightwhitearrow = \Rightarrow
     \let \upwhitearrow = \Uparrow
     \let \downwhitearrow = \Downarrow
-}}
+  }}
+}
+
+\newrobustcmd\rdxm@moremath@miscellaneous{
+  \RequirePackage{mathtools} % for \mathllap command，pmatrix* environment
+  \RequirePackage{extarrows}
+  \newcommand{\e}{\mathrm{e}}
+  \newcommand{\R}{\mathbb{R}}
+  \DeclareMathOperator{\arccot}{arccot}
+  \DeclareMathOperator{\Corr}{\rho}
+  \DeclareMathOperator{\Cov}{Cov}
+  \DeclareMathOperator{\diag}{diag}
+  \DeclareMathOperator{\grad}{grad}
+  \DeclareMathOperator{\Prj}{Prj}
+  \DeclareMathOperator{\tr}{tr}
+  \DeclareMathOperator{\Var}{Var}
+  \DeclareMathOperator{\diver}{div}
+  \let\division=\div
+  \let\div=\diver
+  \let\ov=\overrightarrow
+  \let\le=\leqslant
+  \let\ge=\geqslant
+  \let\lb=\{
+  \let\rb=\}
+  \def\T{\mathrm{T}\kern-.5pt}
+}
+
+\ifbool{exam@moremath}{
+  \rdxm@moremath@diagbox
+  \rdxm@moremath@limits
+  \rdxm@moremath@differential
+  \rdxm@moremath@widebar
+  \rdxm@moremath@vector
+  \rdxm@moremath@widefrac
+  \rdxm@moremath@whitearrow
+  \rdxm@moremath@miscellaneous
+}{}
+
+%% ---------------------------------------------------------------------------
+%% Load local user config file
+%% ---------------------------------------------------------------------------
+
+\InputIfFileExists{randexam.cfg}{}{}
+
+%% ---------------------------------------------------------------------------
+%% Support for Chinese Language
+%% ---------------------------------------------------------------------------
+
+\newrobustcmd\rdxm@chinese@ctex{
+  %% 四号    小四号    五号      小五号
+  %% 14bp    12bp      10.5bp    9bp
+  %% 实际上，在旧版本 ctex 中只能用 cs4size 和 c5size 选项
+  %% 而新版本 ctex 中，可以利用 zihao 选项指定各种中文字号
+  \PassOptionsToPackage{CJKnumber}{xeCJK}
+  \RequirePackage[cs4size,UTF8,noindent,heading]{ctex}
+  \ifbool{exam@plain}{\pagestyle{plain}}{\pagestyle{fancy}}
+  %% 在旧版本 xeCJK 中，必须用 CJKnumber 选项载入 CJKnumb 包，后面才载入会报错
+  %% 但在新版本 xeCJK 中 CJKnumber 选项已经被废弃，需要在后面自行载入它
+  %% 在 xeCJK 中已经禁止载入 CJK，但是在新版本 ctex 宏包中却失效了
+  %% 我们假装 CJK 已经载入，再载入 CJKnumb，避免出现 \CJKglue 重复定义的问题
+  %% 注意用 PDFLaTeX 编译时需要用到 CJK，所以只在未定义时才作修改
+  \ifdefined\CJKglue
+    \@namedef{ver@CJK.sty}{}
+    %\@namedef{opt@CJK.sty}{}
+  \fi
+  \RequirePackage{CJKnumb}
+  %% 新版本 xeCJK 已经废弃并禁用 CJKfntef，改用 xeCJKfntef 取代，我们需要载入后者
+  %% 注意要保证能在较旧的 TeX 系统中编译，我们只能用 \ifXeTeX 而不能用 \ifxetex
+  %% 因为旧版本 iftex 宏包只有 \ifXeTeX 命令，而 ifxetex 宏包才有 \ifxetex 命令
+  %% 在 2019 年 10 月，LaTeX 开发团队接管了 iftex 宏包，新版本同时提供这两个命令
+  \RequirePackage{CJKfntef}
+  \RequirePackage{iftex}
+  \ifXeTeX\@ifpackagelater{xeCJK}{2020/02/10}{\RequirePackage{xeCJKfntef}}{}\fi
+  \ifbool{XeTeX}{
+    % https://en.wikipedia.org/wiki/Number_Forms
+    % Ⅰ、Ⅱ、Ⅲ、Ⅳ、Ⅴ、Ⅵ、Ⅶ、Ⅷ、Ⅸ、Ⅹ、Ⅺ、Ⅻ
+    \xeCJKsetcharclass{"2150}{"218F}{1} % 斜线分数，全角罗马数字等
+    % https://en.wikipedia.org/wiki/Enclosed_Alphanumerics
+    \xeCJKsetcharclass{"2460}{"24FF}{1} % 带圈数字字母，括号数字字母，带点数字等
+  }{}
+}
+\ifbool{exam@ctex}{\rdxm@chinese@ctex}{}
+
+\newrobustcmd\rdxm@chinese@sourcehan{
+  \setCJKmainfont[BoldFont=Source~Han~Sans~SC]{Source~Han~Serif~SC}
+  \setCJKsansfont{Source~Han~Sans~SC}
+  %% 用中文字体名时 LuaTeX 找不到该字体，XeTeX 正常
+  %\setCJKmainfont[BoldFont=思源黑体]{思源宋体}
+  %\setCJKsansfont{思源黑体}
+}
+\AtBeginDocument{
+  \ifbool{exam@sourcehan}{
+    \ifbool{XeTeX}{\rdxm@chinese@sourcehan}{
+      \ifbool{LuaTeX}{\rdxm@chinese@sourcehan}{}
+    }
+  }{}
+}
+
+%% 这里不能用 \ifbool，因为涉及到 catcode 的改变
+\ifexam@solidot
+  \ifXeTeX
+    \catcode`。=\active\def。{．}
+    \else\ifLuaTeX
+      \catcode`。=\active\def。{．}
+    \fi
+  \fi
+\fi
+
+%% Chinese translations of keywords
+\DeclareExamTranslation{chinese}{
+   answertable-Answer   = 答案
+  ,answertable-Number   = 小题
+  ,examdata-Appendix    = 附录
+  ,exampart-Part        = {第,部分}
+  ,examtitle-Name       = 姓名
+  ,examtitle-Solutions  = 试卷解答
+  ,gradetable-Evaluator = 评阅人
+  ,gradetable-Part      = 部分
+  ,gradetable-Score     = 得分
+  ,gradetable-Total     = 总分
+  ,headfoot-Name        = 姓名
+  ,headfoot-of          = {共,页}
+  ,headfoot-Page        = {第,页}
+  ,headfoot-Solutions   = 试卷解答
+  ,headfoot-Version     = {\relax,卷}
+  ,points-point         = 分
+  ,points-points        = 分
+  ,question-Question    = 题
+  ,solution-Solution    = 解
+}
+\ifbool{exam@ctex}{\SelectExamTranslation{chinese}}{}
+
+%% ---------------------------------------------------------------------------
+%% Stop ignoring spaces in the code
+%% ---------------------------------------------------------------------------
 
 \IgnoreSpacesOff
 

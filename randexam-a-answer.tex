@@ -1,8 +1,8 @@
 % -*- coding: utf-8 -*-
 % !TEX program = xelatex
-\documentclass[12pt,most]{randexam}
+\documentclass[12pt,math=all]{randexam}
 
-%\answerfalse % hide answers
+%\boolfalse{exam@answer} % hide answers
 
 \SetExamOption{
   seed = 19061116, % random seed
@@ -10,7 +10,7 @@
 
 \begin{document}
 
-\examtitle{name=Math 1906 Final Exam,date=2018-06-28,version=A} % make exam title
+\examtitle{name=Math 1906 Final Exam,date=\today,version=A} % make exam title
 
 \gradetable[total=4]
 
@@ -309,7 +309,7 @@ Text text $H_0:\mu=3140$ text text ($\alpha = 0.01$).
 
 \exampart{Work out math proofs.}{2 questions; 16 points in total.}
 
-\DeclareExamTranslation{current}{solution-Solution=Proof} % rename "Solution" as "Proof"
+\SetExamTranslation{solution-Solution=Proof} % rename "Solution" as "Proof"
 
 \begin{question}[points=9]
 The first question $\{x_n\}$ text $x_1=\sqrt2$, $x_{n+1}=\sqrt{2+x_n}$.
