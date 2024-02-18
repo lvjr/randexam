@@ -3,7 +3,7 @@
 \documentclass[12pt,plain,math=most]{randexam}
 \geometry{b5paper,margin=2cm}
 
-\newcommand*{\myversion}{2024D}
+\newcommand*{\myversion}{2024E}
 \newcommand*{\mydate}{\the\year-\mylpad\month-\mylpad\day}
 \newcommand*{\mylpad}[1]{\ifnum#1<10 0\the#1\else\the#1\fi}
 
@@ -30,8 +30,6 @@
 \usepackage{tabularx}
 \usepackage{booktabs}
 
-\newcommand{\fillbox}[1]{\ulinefill{#1}\underline{#1}\ulinefill{#1}}
-
 \usepackage{fancyvrb}
 
 \DefineVerbatimEnvironment{code}{Verbatim}{%
@@ -56,10 +54,10 @@
   \noindent\Large
   \begin{tabularx}{\linewidth}{|X|}
     \hline
-    Title: \fillbox{\color{blue3}The randexam class for LaTeX}\\
-    Author: \fillbox{Jianrui Lyu (tolvjr@163.com)}\\
-    Version: \fillbox{\myversion{} (\mydate)}\\
-    Code: \fillbox{\url{https://github.com/lvjr/randexam}}\\
+    Title:   \ExamFillUlineText{\color{blue3}The randexam class for LaTeX}\\
+    Author:  \ExamFillUlineText{Jianrui Lyu (tolvjr@163.com)}\\
+    Version: \ExamFillUlineText{\myversion{} (\mydate)}\\
+    Code:    \ExamFillUlineText{\url{https://github.com/lvjr/randexam}}\\
     \hline
   \end{tabularx}%
 }
@@ -110,11 +108,11 @@ multiple \mycmd{\exampart}, and an optional \mycmd{\examdata} commands:
 \begin{code}
 \examtitle{name=Math Final Exam,date=2018-06-28,version=A}
 ......
-\exampart{Fill in the blanks.}{3 points for each.}
+\exampart{Fill in the blanks.}[3 points for each.]
 ......
-\exampart{Select one answer.}{3 points for each.}
+\exampart{Select one answer.}[3 points for each.]
 ......
-\exampart{Work out math calculations.}{8 points for each.}
+\exampart{Work out math calculations.}[8 points for each.]
 ......
 \examdata{Some data may be used in the exam}
 ......
@@ -138,11 +136,11 @@ will be modified from \myval{A} to \myval{B}.
 The questions in an exam could be separated into several parts:
 
 \begin{code}
-\exampart{Fill in the blanks.}{3 points for each.}
+\exampart{Fill in the blanks.}[3 points for each.]
 ......
-\exampart{Select one answer.}{3 points for each.}
+\exampart{Select one answer.}[3 points for each.]
 ......
-\exampart{Work out math calculations.}{8 points for each.}
+\exampart{Work out math calculations.}[8 points for each.]
 ......
 \end{code}
 
@@ -163,7 +161,7 @@ or the exam variants will be incorrect.
 \subsection{True-or-false questions}
 
 \begin{code}
-\exampart{True-or-false questions}{3 points for each.}
+\exampart{True-or-false questions}[3 points for each.]
 
 \begin{question}
 The first true-or-false question. \tickout{T}
@@ -192,7 +190,7 @@ so as to make \mypkg{randexam} hide them in generating blank exam papers.
 \subsection{Fill-in-the-blank questions}
 
 \begin{code}
-\exampart{Fill in the blanks.}{3 points for each.}
+\exampart{Fill in the blanks.}[3 points for each.]
 
 \begin{question}
 The first fill-in-the-blank question \fillout{answer}.
@@ -220,7 +218,7 @@ so as to make \mypkg{randexam} hide them in generating blank exam papers.
 \subsection{Multiple-choice questions}
 
 \begin{code}
-\exampart{Select one answer.}{3 points for each.}
+\exampart{Select one answer.}[3 points for each.]
 
 \begin{question}
 The first multiple-choice questions \pickout{A}.
@@ -278,7 +276,7 @@ according to the lengths of the choices.
 For subjective questions, you could put answers inside \myenv{solution} environment.
 
 \begin{code}
-\exampart{Work out math calculations.}{8 points for each.}
+\exampart{Work out math calculations.}[8 points for each.]
 
 \begin{question}
 The first math calculation question.
@@ -318,7 +316,7 @@ Answer to the second question.
 You can write other types of questions. For example:
 
 \begin{code}
-\exampart{Some question type}{4 points for each.}
+\exampart{Some question type}[4 points for each.]
 
 \begin{question}
 First question text. \answer{Answer text.}
@@ -522,7 +520,8 @@ All options provided by \mypkg{randexam} class are listed in the following table
   \myopt{math=most}  & $\Leftrightarrow$ \myopt{mathdesign,freealign,medmath} \\
   \myopt{math=all}   & $\Leftrightarrow$ \myopt{mathdesign,freealign,medmath,moremath} \\
 \midrule
-  \myopt{chinese}    & select Chinese language and load \mypkg{ctex} package \\
+  \myopt{language}   & set language and use corresponding translations \\
+ %\myopt{chinese}    & select Chinese language and load \mypkg{ctex} package \\
 \bottomrule
 \end{tabularx}
 
@@ -651,6 +650,27 @@ After this, you could load current translation of some keywords with \mycmd{\Use
 
 This command is useful in defining new templates for the exam (see Subsection \ref{subsect:template}).
 
+\subsection{Checking current language}
+
+There are commands \mycmd{\IfExamLanguageEqT},
+\mycmd{\IfExamLanguageEqF}, and \mycmd{\IfExamLanguageEqTF},
+with which you can execute code based on current language.
+
+\subsection{Checking boolean flags}
+
+There are several commands for creating, setting, or checking boolean flags:
+
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+  \mycmd{\NewExamBool}      & create a new boolean flag \\
+  \mycmd{\SetExamBoolTrue}  & set the boolean flag to true \\
+  \mycmd{\SetExamBoolFalse} & set the boolean flag to false \\
+  \mycmd{\IfExamBoolT}      & run code if the boolean flag is true \\
+  \mycmd{\IfExamBoolF}      & run code if the boolean flag is false \\
+  \mycmd{\IfExamBoolTF}     & run true-state code or false-state code \\
+\bottomrule
+\end{tabularx}
+
 \subsection{Saving and reading key values}
 
 With \mycmd{\SetExamValue} and \mycmd{\UseExamValue} you could save and read
@@ -667,9 +687,14 @@ the value of a key, respectively.
 \hrule
 \vspace{0.5em}
 
-The \mypkg{randexam} class also provides commands \mycmd{\IfExamValueExistT},
-\mycmd{\IfExamValueExistF}, and \mycmd{\IfExamValueExistTF},
-with which you can do conditional typesetting.
+The class also provides commands for conditional typesetting.
+
+\begin{tabularx}{\linewidth}{@{}XXX@{}}
+\toprule
+\mycmd{\IfExamValueExistT} & \mycmd{\IfExamValueExistF} & \mycmd{\IfExamValueExistTF} \\
+\mycmd{\IfExamValueEmptyT} & \mycmd{\IfExamValueEmptyF} & \mycmd{\IfExamValueEmptyTF} \\
+\bottomrule
+\end{tabularx}
 
 \begin{code}
 \IfExamValueExistTF{somemodule}{somekey}{True}{False}
@@ -762,5 +787,78 @@ are listed in the following table:
 \hline
 \end{tabularx}\par
 \endgroup
+
+\subsection{Filling space with contents}
+
+In defining exam templates, we may need the following filling commands.
+
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+  \mycmd{\ExamFillCdot}         & fill space with centered dots \\
+  \mycmd{\ExamFillUline}        & fill space with an underline \\
+  \mycmd{\ExamFillUlineText}    & fill space with underlined text \\
+  \mycmd{\ExamFillUlinePhantom} & fill space with underlined phantom text \\
+\bottomrule
+\end{tabularx}
+
+\begin{code}
+Hello\ExamFillCdot World\par
+Hello\ExamFillUline World\par
+Hello\ExamFillUlineText{Text}World\par
+Hello\ExamFillUlinePhantom{\Huge Text}World\par
+\end{code}
+
+Hello\ExamFillCdot World\par
+Hello\ExamFillUline World\par
+Hello\ExamFillUlineText{Text}World\par
+Hello\ExamFillUlinePhantom{\Huge Text}World\par
+
+\subsection{Headers and Footers}
+
+To customize headers and footers of the exam paper,
+we could modify the following \myval{fancy} templates.
+
+\begin{code}
+\DeclareExamTemplate{headleft}{fancy}{
+  \UseExamValue{examtitle}{name}
+}
+\DeclareExamTemplate{headcenter}{fancy}{}
+\DeclareExamTemplate{headright}{fancy}{
+  \IfExamBoolTF{answer}{
+    \UseExamTranslation{headfoot-Solutions}
+  }{
+    \UseExamTranslation{headfoot-Name}:\hspace{12em}
+  }
+}
+\DeclareExamTemplate{footleft}{fancy}{
+  \UseExamValue{examtitle}{date}
+}
+\DeclareExamTemplate{footcenter}{fancy}{
+  \UseExamTranslation{headfoot-Page} \thepage\space
+  \UseExamTranslation{headfoot-of} \zpageref{LastPage}
+}
+\DeclareExamTemplate{footright}{fancy}{
+  \UseExamTranslation{headfoot-Version}
+  \UseExamValue{examtitle}{version}
+}
+\end{code}
+
+Actually, \mypkg{randexam} class uses \mypkg{fancyhdr} package
+to customize headers and footers.
+
+\subsection{Themes of exam papers}
+
+With \mycmd{\DeclareExamTheme} command you can collect some templates into a theme,
+which could be activated later with \mycmd{\SelectExamTheme} command.
+
+\begin{code}
+\DeclareExamTheme{mytheme}{
+  \SelectExamTemplate{examtitle}{mytheme}
+  \SelectExamTemplate{exampart}{mytheme}
+  \SelectExamTemplate{examdata}{mytheme}
+}
+......
+\SelectExamTheme{mytheme}
+\end{code}
 
 \end{document}

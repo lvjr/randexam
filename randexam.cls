@@ -6,7 +6,7 @@
 % ----------------------------------------------------------------------------
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{randexam}[2024-02-03 v2024D Make an exam paper and its randomized variants]
+\ProvidesClass{randexam}[2024-02-18 v2024E Make an exam paper and its randomized variants]
 
 %% Old LaTeX release could not recognize date format like 2022-11-01
 %\@ifl@t@r\fmtversion{2022-11-01}{}{
@@ -25,27 +25,74 @@
 \IgnoreSpacesOn
 
 %% ---------------------------------------------------------------------------
-%% Declare class options
+%% Boolean commands for this class
 %% ---------------------------------------------------------------------------
 
 \RequirePackage{etoolbox}
 
-\newbool{exam@plain}      \boolfalse{exam@plain}      % use plain page style
-\newbool{exam@twoinone}   \boolfalse{exam@twoinone}   % use A3 paper
-\newbool{exam@oneside}    \boolfalse{exam@oneside}    % use single sided exam paper
-\newbool{exam@resetnumber}\booltrue{exam@resetnumber} % reset numbers in new exam parts
-\newbool{exam@random}     \boolfalse{exam@random}     % shuffle questions
-\newbool{exam@answer}     \booltrue{exam@answer}      % show answers
-\newbool{exam@evaluator}  \boolfalse{exam@evaluator}  % add evaluator line in the grade table
-\newbool{exam@mathdesign} \booltrue{exam@mathdesign}  % use mathdesign fonts
-\newbool{exam@freealign}  \boolfalse{exam@freealign}  % load freealign package
-\newbool{exam@medmath}    \boolfalse{exam@medmath}    % use medium-size formulas
-\newbool{exam@moremath}   \boolfalse{exam@moremath}   % define more math commands
+\NewDocumentCommand\NewExamBool{m}{
+  \newbool{exam@#1}
+}
+
+\NewDocumentCommand\SetExamBoolTrue{m}{
+  \booltrue{exam@#1}
+}
+
+\NewDocumentCommand\SetExamBoolFalse{m}{
+  \boolfalse{exam@#1}
+}
+
+\NewExpandableDocumentCommand\IfExamBoolT{m+m}{
+  \ifbool{exam@#1}{#2}{}
+}
+
+\NewExpandableDocumentCommand\IfExamBoolF{m+m}{
+  \ifbool{exam@#1}{}{#2}
+}
+
+\NewExpandableDocumentCommand\IfExamBoolTF{m+m+m}{
+  \ifbool{exam@#1}{#2}{#3}
+}
+
+%% ---------------------------------------------------------------------------
+%% Declare language commands
+%% ---------------------------------------------------------------------------
+
+\tlSet\l@rdxm@current@language@tl{english}
+
+\NewExpandableDocumentCommand\IfExamLanguageEqT{m+m}{
+  \ExpandArgs{V}\ifstrequal\l@rdxm@current@language@tl{#1}{#2}{}
+}
+
+\NewExpandableDocumentCommand\IfExamLanguageEqF{m+m}{
+  \ExpandArgs{V}\ifstrequal\l@rdxm@current@language@tl{#1}{}{#2}
+}
+
+\NewExpandableDocumentCommand\IfExamLanguageEqTF{m+m+m}{
+  \ExpandArgs{V}\ifstrequal\l@rdxm@current@language@tl{#1}{#2}{#3}
+}
+
+%% ---------------------------------------------------------------------------
+%% Declare class options
+%% ---------------------------------------------------------------------------
+
+\NewExamBool{plain}      \SetExamBoolFalse{plain}      % use plain page style
+\NewExamBool{twoinone}   \SetExamBoolFalse{twoinone}   % use A3 paper
+\NewExamBool{oneside}    \SetExamBoolFalse{oneside}    % use single sided exam paper
+\NewExamBool{resetnumber}\SetExamBoolTrue{resetnumber} % reset numbers in new exam parts
+\NewExamBool{random}     \SetExamBoolFalse{random}     % shuffle questions
+\NewExamBool{answer}     \SetExamBoolTrue{answer}      % show answers
+\NewExamBool{evaluator}  \SetExamBoolFalse{evaluator}  % add evaluator line in the grade table
+\NewExamBool{mathdesign} \SetExamBoolTrue{mathdesign}  % use mathdesign fonts
+\NewExamBool{freealign}  \SetExamBoolFalse{freealign}  % load freealign package
+\NewExamBool{medmath}    \SetExamBoolFalse{medmath}    % use medium-size formulas
+\NewExamBool{moremath}   \SetExamBoolFalse{moremath}   % define more math commands
 
 \DeclareKeys[randexam]{
-   plain      .if        = exam@plain
+   language   .store     = \l@rdxm@current@language@tl
+  ,plain      .if        = exam@plain
   ,a3paper    .if        = exam@twoinone
-  ,a3input    .code      = \booltrue{exam@twoinone}\booltrue{exam@plain}
+  ,a3input    .code      = \SetExamBoolTrue{twoinone}\SetExamBoolTrue{plain}
   ,oneside    .if        = exam@oneside
   ,random     .if        = exam@random
   ,noanswer   .ifnot     = exam@answer
@@ -56,26 +103,26 @@
   ,moremath   .if        = exam@moremath
   ,math       .choice:
   ,math       .default:n = many
-  ,math/many  .code      = \booltrue{exam@mathdesign}\booltrue{exam@freealign}
-  ,math/most  .code      = \booltrue{exam@mathdesign}\booltrue{exam@freealign}
-                           \booltrue{exam@medmath}
-  ,math/all   .code      = \booltrue{exam@mathdesign}\booltrue{exam@freealign}
-                           \booltrue{exam@medmath}\booltrue{exam@moremath}
+  ,math/many  .code      = \SetExamBoolTrue{mathdesign}\SetExamBoolTrue{freealign}
+  ,math/most  .code      = \SetExamBoolTrue{mathdesign}\SetExamBoolTrue{freealign}
+                           \SetExamBoolTrue{medmath}
+  ,math/all   .code      = \SetExamBoolTrue{mathdesign}\SetExamBoolTrue{freealign}
+                           \SetExamBoolTrue{medmath}\SetExamBoolTrue{moremath}
 }
 
 %% Support for Chinese language
-\newbool{exam@ctex}     \boolfalse{exam@ctex}      % load ctex package
-\newbool{exam@solidot}  \boolfalse{exam@solidot}   % use full-width solid periods
-\newbool{exam@sourcehan}\boolfalse{exam@sourcehan} % use source han font
+\NewExamBool{ctex}     \SetExamBoolFalse{ctex}      % load ctex package
+\NewExamBool{solidot}  \SetExamBoolFalse{solidot}   % use full-width solid periods
+\NewExamBool{sourcehan}\SetExamBoolFalse{sourcehan} % use source han font
 \DeclareKeys[randexam]{
    ctex         .if        = exam@ctex
   ,solidot      .if        = exam@solidot
   ,sourcehan    .if        = exam@sourcehan
   ,chinese      .choice:
   ,chinese      .default:n = many
-  ,chinese/many .code      = \booltrue{exam@ctex}
-  ,chinese/most .code      = \booltrue{exam@ctex}\booltrue{exam@solidot}
-  ,chinese/all  .code      = \booltrue{exam@ctex}\booltrue{exam@solidot}\booltrue{exam@sourcehan}
+  ,chinese/many .code      = \SetExamBoolTrue{ctex}
+  ,chinese/most .code      = \SetExamBoolTrue{ctex}\SetExamBoolTrue{solidot}
+  ,chinese/all  .code      = \SetExamBoolTrue{ctex}\SetExamBoolTrue{solidot}\SetExamBoolTrue{sourcehan}
 }
 
 \DeclareUnknownKeyHandler{\PassOptionsToClass{\CurrentOption}{article}}
@@ -84,11 +131,17 @@
 
 \LoadClass{article}
 
-\ifbool{exam@twoinone}{
+%% Avoid option conflicts with fontspec package
+%% see https://github.com/latex3/fontspec/issues/501
+\let\@raw@classoptionslist\@empty
+
+\IfExamBoolTF{twoinone}{
   \RequirePackage[a3paper,landscape,twocolumn,columnsep=60mm,left=30mm,right=30mm,top=25mm,bottom=25mm]{geometry}
 }{
   \RequirePackage[a4paper,left=30mm,right=30mm,top=25mm,bottom=25mm]{geometry}
 }
+
+\geometry{headheight=17pt}
 
 \RequirePackage{amsmath}
 \RequirePackage{array}
@@ -100,10 +153,12 @@
 \RequirePackage{zref-user,zref-lastpage}
 \RequirePackage{tabularx}
 \RequirePackage{xcolor}
+\RequirePackage{tabularray}
+\UseTblrLibrary{diagbox}
 
-\ifbool{exam@plain}{\allowdisplaybreaks[4]}{}
+\IfExamBoolT{plain}{\allowdisplaybreaks[4]}
 
-\ifbool{exam@twoinone}{
+\IfExamBoolT{twoinone}{
   \RequirePackage{pdfpages}
   % When pdfpages package is newer enough, putting \includepdf at the beginning
   % of document body will cause an error about an undefined command;
@@ -111,9 +166,9 @@
   % Also since LaTeX release 2018-04-01 \@ifundefined won't turn an undefined command
   % into \relax; see https://www.latex-project.org/news/latex2e-news/ltnews28.pdf
   \@ifundefined{@setmarks}{\let\@setmarks\relax}{}
-}{}
+}
 
-\ifbool{exam@mathdesign}{
+\IfExamBoolTF{mathdesign}{
   \RequirePackage[utopia]{mathdesign} % charter, utopia
   \renewcommand\bfdefault{bx}
   \let\oldoiint\oiint\renewcommand{\oiint}{\oldoiint\nolimits}
@@ -122,6 +177,7 @@
   \RequirePackage{amssymb}
 }
 
+\setlength\arraycolsep{4pt}
 \newcolumntype{Y}{>{\centering\arraybackslash}X}
 \newcolumntype{n}[1]{>{\centering\arraybackslash}m{#1}}
 
@@ -156,8 +212,6 @@
 %% ---------------------------------------------------------------------------
 %% Translation commands for exam keywords
 %% ---------------------------------------------------------------------------
-
-\tlSet\l@rdxm@current@language@tl{english}
 
 \DeclareUnknownKeyHandler[randexam/translation]{
   \tlSet{\expName{l@rdxm@translate@\l@rdxm@declare@language@tl @#1@tl}}{#2}
@@ -223,7 +277,7 @@
   ,solution-Solution    = Solution
 }
 
-\SelectExamTranslation{english}
+\ExpandArgs{V}\SelectExamTranslation\l@rdxm@current@language@tl
 
 %% ---------------------------------------------------------------------------
 %% Keyvalue commands for exam elements
@@ -257,6 +311,16 @@
   \UseName{l@rdxm@value@#1@#2@tl}
 }
 
+\NewExpandableDocumentCommand\IfExamValueEmptyT{mm+m}{
+  \ifcsempty{l@rdxm@value@#1@#2@tl}{#3}{}
+}
+\NewExpandableDocumentCommand\IfExamValueEmptyF{mm+m}{
+  \ifcsempty{l@rdxm@value@#1@#2@tl}{}{#3}
+}
+\NewExpandableDocumentCommand\IfExamValueEmptyTF{mm+m+m}{
+  \ifcsempty{l@rdxm@value@#1@#2@tl}{#3}{#4}
+}
+
 %% In fact, \ifdef/ifcsname is a wrapper for \ifdefined/\ifcsname in eTeX;
 %% they will not turn an undefined macro into \relax
 \NewExpandableDocumentCommand\IfExamValueExistT{mm+m}{
@@ -275,6 +339,44 @@
 }
 
 %% ---------------------------------------------------------------------------
+%% Theme commands for exam papers
+%% ---------------------------------------------------------------------------
+
+%% #1: theme name; #2: theme code
+\NewDocumentCommand\DeclareExamTheme{m+m}{
+  \tlSet{\expName{l@rdxm@theme@#1@tl}}{#2}
+}
+
+%% #1: theme name
+\NewDocumentCommand\SelectExamTheme{m}{
+  \UseName{l@rdxm@theme@#1@tl}
+}
+
+\DeclareKeys[randexam]{
+  theme .code = \SelectExamTheme{#1}
+}
+
+%% ---------------------------------------------------------------------------
+%% Fill commands for exam papers
+%% ---------------------------------------------------------------------------
+
+\NewDocumentCommand\ExamFillCdot{}{
+  \leavevmode\xleaders\hbox to 0.5em{\hss$\cdot$\hss}\hfill\kern0pt\relax
+}
+
+\NewDocumentCommand\ExamFillUline{}{
+  \xleaders\hbox{\underline{\kern1pt}}\hfill\kern0pt
+}
+
+\NewDocumentCommand\ExamFillUlinePhantom{m}{
+  \xleaders\hbox{\underline{\vphantom{#1}\kern1pt}}\hfill\kern0pt
+}
+
+\NewDocumentCommand\ExamFillUlineText{m}{
+  \ExamFillUlinePhantom{#1}\underline{#1}\ExamFillUlinePhantom{#1}
+}
+
+%% ---------------------------------------------------------------------------
 %% Command for exam title: \examtitle
 %% ---------------------------------------------------------------------------
 
@@ -289,7 +391,7 @@
 \DeclareExamTemplate{examtitle}{normal}{
   \begingroup
   \Large\noindent
-  \ifbool{exam@answer}{
+  \IfExamBoolTF{answer}{
     \textcolor{red!80!black}{
       \UseExamValue{examtitle}{name}\hfill\UseExamTranslation{examtitle-Solutions}
     }
@@ -302,15 +404,15 @@
 
 \NewDocumentCommand\examtitle{+m}{
   \SetExamValue{examtitle}{#1}
-  \thispagestyle{plain}
-  \ifbool{exam@random}{
+  \IfExamBoolF{plain}{\thispagestyle{fancyfirst}}
+  \IfExamBoolT{random}{
     \tlIfEqT{\expWhole{\UseExamValue{examtitle}{version}}}{A}{
       \SetExamValue{examtitle}{version=B}
     }
     \tlIfEqT{\expWhole{\UseExamValue{examtitle}{version}}}{C}{
       \SetExamValue{examtitle}{version=D}
     }
-  }{}
+  }
   \UseExamTemplate{examtitle}{default}
 }
 
@@ -360,7 +462,7 @@
     {}
     {\UseExamValue{gradetable}{total}}
     \rdxm@gobble@one
-  \ifbool{exam@evaluator}{
+  \IfExamBoolT{evaluator}{
     \rdxm@table@make@row
       \l@rdxm@gradetable@evaluator@tl
       {\textbf{\UseExamTranslation{gradetable-Evaluator}}
@@ -368,13 +470,13 @@
       {}
       {\UseExamValue{gradetable}{total}}
       \rdxm@gobble@one
-  }{}
+  }
   \noindent
   \begin{tabularx}{\linewidth}{|c|*{\UseExamValue{gradetable}{total}}{Y|}Y|}
     \hline
     \l@rdxm@gradetable@part@tl \\ \hline
     \l@rdxm@gradetable@score@tl \\ \hline
-    \ifbool{exam@evaluator}{\l@rdxm@gradetable@evaluator@tl \\ \hline}{}
+    \IfExamBoolT{evaluator}{\l@rdxm@gradetable@evaluator@tl \\ \hline}
   \end{tabularx}
 }
 \SelectExamTemplate{gradetable}{normal}
@@ -391,56 +493,115 @@
 %% Setting header and footer
 %% ---------------------------------------------------------------------------
 
-\newcommand{\rdxm@columnbox}[1]{\makebox[\columnwidth]{#1}}
-\newcommand{\rdxm@headleft}{\UseExamValue{examtitle}{name}}
-\newcommand{\rdxm@headright}{
-  \ifbool{exam@answer}{
+\DeclareExamTemplate{headleft}{empty}{}
+\DeclareExamTemplate{headcenter}{empty}{}
+\DeclareExamTemplate{headright}{empty}{}
+\DeclareExamTemplate{footleft}{empty}{}
+\DeclareExamTemplate{footcenter}{empty}{}
+\DeclareExamTemplate{footright}{empty}{}
+
+\DeclareExamTemplate{headleft}{plain}{}
+\DeclareExamTemplate{headcenter}{plain}{}
+\DeclareExamTemplate{headright}{plain}{}
+\DeclareExamTemplate{footleft}{plain}{}
+\DeclareExamTemplate{footcenter}{plain}{\thepage}
+\DeclareExamTemplate{footright}{plain}{}
+
+\DeclareExamTemplate{headleft}{fancy}{
+  \UseExamValue{examtitle}{name}
+}
+\DeclareExamTemplate{headcenter}{fancy}{}
+\DeclareExamTemplate{headright}{fancy}{
+  \IfExamBoolTF{answer}{
     \UseExamTranslation{headfoot-Solutions}
   }{
     \UseExamTranslation{headfoot-Name}:\hspace{12em}
   }
 }
-\newcommand{\rdxm@headtext}{\rdxm@headleft\hfill\rdxm@headright}
-\newcommand{\rdxm@footleft}{\UseExamValue{examtitle}{date}}
-\newcommand{\rdxm@footcenter}{
+\DeclareExamTemplate{footleft}{fancy}{
+  \UseExamValue{examtitle}{date}
+}
+\DeclareExamTemplate{footcenter}{fancy}{
   \MakeExamNameNumber{\UseExamTranslation{headfoot-Page}}{\thepage}
   \space
   \MakeExamNameNumber{\UseExamTranslation{headfoot-of}}{\zpageref{LastPage}}
 }
-\newcommand{\rdxm@footright}{
+\DeclareExamTemplate{footright}{fancy}{
   \MakeExamNameNumber{\UseExamTranslation{headfoot-Version}}
       {\UseExamValue{examtitle}{version}}
 }
-\newcommand{\rdxm@foottext}{\rdxm@footleft\hfill\rdxm@footcenter\hfill\rdxm@footright}
 
-% fancy page style
-\fancyhf{} % clear head and foot
-\ifbool{exam@twoinone}{
-  \renewcommand{\headrulewidth}{0pt}
-  \lhead{\small\underline{\rdxm@columnbox{\rdxm@headtext}\strut}}
-  \rhead{\small\underline{\rdxm@columnbox{\rdxm@headtext}\strut}}
-  \lfoot{\small\rdxm@columnbox{\rdxm@foottext}}
-  \rfoot{\small\rdxm@columnbox{\stepcounter{page}\rdxm@foottext}}
+\tlSet\l@rdxm@headtext@tl{
+  \UseExamTemplate{headleft}{default}
+  \hfill
+  \UseExamTemplate{headcenter}{default}
+  \hfill
+  \UseExamTemplate{headright}{default}
+}
+
+\tlSet\l@rdxm@foottext@tl{
+  \UseExamTemplate{footleft}{default}
+  \hfill
+  \UseExamTemplate{footcenter}{default}
+  \hfill
+  \UseExamTemplate{footright}{default}
+}
+
+\newrobustcmd\rdxm@columnbox[1]{\makebox[\columnwidth]{#1}}
+
+\newrobustcmd\rdxm@other@pages@only[1]{\ifnumgreater{\value{page}}{1}{#1}{}}
+\newrobustcmd\rdxm@fancyhead[2][]{\fancyhead[#1]{\rdxm@other@pages@only{#2}}}
+\newrobustcmd\rdxm@fancyfoot[2][]{\fancyfoot[#1]{\rdxm@other@pages@only{#2}}}
+
+\IfExamBoolTF{twoinone}{
+  \rdxm@fancyhead[L]{\small\underline{\rdxm@columnbox{\l@rdxm@headtext@tl}\strut}}
+  \fancyhead[C]{}
+  \fancyhead[R]{\small\underline{\rdxm@columnbox{\l@rdxm@headtext@tl}\strut}}
+  \fancyfoot[L]{\small\rdxm@columnbox{\l@rdxm@foottext@tl}}
+  \fancyfoot[C]{}
+  \fancyfoot[R]{\small\rdxm@columnbox{\stepcounter{page}\l@rdxm@foottext@tl}}
 }{
-  \lhead{\small\rdxm@headleft}
-  \rhead{\small\rdxm@headright}
-  \cfoot{\small\rdxm@foottext}
+  \rdxm@fancyhead[L]{\small\UseExamTemplate{headleft}{default}}
+  \rdxm@fancyhead[C]{\small\UseExamTemplate{headcenter}{default}}
+  \rdxm@fancyhead[R]{\small\UseExamTemplate{headright}{default}}
+  \fancyfoot[L]{\small\UseExamTemplate{footleft}{default}}
+  \fancyfoot[C]{\small\UseExamTemplate{footcenter}{default}}
+  \fancyfoot[R]{\small\UseExamTemplate{footright}{default}}
 }
 
-% plain page style
+%% plain page style
 \fancypagestyle{plain}{
-  \renewcommand{\headrulewidth}{0pt}
-  \fancyhf{}
-  \ifbool{exam@twoinone}{
-    \rhead{\small\underline{\rdxm@columnbox{\rdxm@headtext\strut}}}
-    \lfoot{\small\rdxm@columnbox{\rdxm@foottext}}
-    \rfoot{\small\rdxm@columnbox{\stepcounter{page}\rdxm@foottext}}
-  }{
-    \cfoot{\small\rdxm@foottext}
-  }
+  \renewcommand\headrulewidth{0pt}
+  \fancyhead{}
+  \SelectExamTemplate{footleft}{plain}
+  \SelectExamTemplate{footcenter}{plain}
+  \SelectExamTemplate{footright}{plain}
 }
 
-\ifbool{exam@plain}{\pagestyle{plain}}{\pagestyle{fancy}}
+%% fancy page style
+\tlSet\l@rdxm@fancy@page@code@tl{
+  \SelectExamTemplate{headleft}{fancy}
+  \SelectExamTemplate{headcenter}{fancy}
+  \SelectExamTemplate{headright}{fancy}
+  \SelectExamTemplate{footleft}{fancy}
+  \SelectExamTemplate{footcenter}{fancy}
+  \SelectExamTemplate{footright}{fancy}
+}
+\fancypagestyle{fancy}{
+  \IfExamBoolTF{twoinone}{
+    \renewcommand\headrulewidth{0pt}
+  }{
+    \renewcommand\headrulewidth{0.4pt}
+  }
+  \l@rdxm@fancy@page@code@tl
+}
+\fancypagestyle{fancyfirst}{
+  \renewcommand\headrulewidth{0pt}
+  \l@rdxm@fancy@page@code@tl
+}
+
+%% set page style at this time since users may change header/footer templates
+\AtBeginDocument{\IfExamBoolTF{plain}{\pagestyle{plain}}{\pagestyle{fancy}}}
 
 %% ---------------------------------------------------------------------------
 %% Class option for shuffling questions: random
@@ -454,7 +615,7 @@
   seed .initial:n = 19061116
 }
 
-\ifbool{exam@random}{
+\IfExamBoolT{random}{
   \RequirePackage{pgf}
   \RequirePackage{pgffor}
   \newcommand*\exam@set@seed{
@@ -465,7 +626,7 @@
     \pgfmathsetseed{\rdxm@random@seed}
     \pgfmathrandominteger\rdxm@random@seed{1}{2147483647}
   }
-}{}
+}
 
 %% ---------------------------------------------------------------------------
 %% Command for exam groups: \exampart
@@ -481,7 +642,7 @@
 \SetExamValue{exampart}{number=\Roman}
 
 %% No displaying question number when there is only one question in the part
-\newbool{exam@onlyonequestion}\boolfalse{exam@onlyonequestion}
+\NewExamBool{onlyonequestion}\SetExamBoolFalse{onlyonequestion}
 
 \xdef\allquestions{}
 \xdef\lastquestion{}
@@ -564,12 +725,12 @@
 }
 
 \newcommand{\printquestions}{
-  \ifbool{exam@random}{
+  \IfExamBoolT{random}{
     \rdxm@appto@questions
     \rdxm@shuffle@questions
     \setcounter{question}{0}
     \allquestions
-  }{}
+  }
   \xdef\allquestions{}
   \xdef\lastquestion{}
 }
@@ -582,11 +743,13 @@
     }
     :~\UseExamValue{exampart}{type}
   }
-  \space(\UseExamValue{exampart}{points})
+  \IfExamValueEmptyF{exampart}{points}{
+    \space(\UseExamValue{exampart}{points})
+  }
 }
 \SelectExamTemplate{exampart}{normal}
 
-\newcommand{\exampart}[2]{
+\NewDocumentCommand\exampart{+m+O{}}{
   \printquestions
   \setcounter{totalquestions}{\value{totalquestions}+\value{question}}
   \setcounter{question}{0}
@@ -598,9 +761,9 @@
   \endgroup
   \par\nopagebreak
   \if\relax\detokenize{#1}\relax % #1 is empty
-    \booltrue{exam@onlyonequestion}
+    \SetExamBoolTrue{onlyonequestion}
   \else
-    \boolfalse{exam@onlyonequestion}
+    \SetExamBoolFalse{onlyonequestion}
     \vspace{1em}
   \fi
   % \@afterheading sets \@nobreaktrue, which will prevent page breaks before lists;
@@ -649,8 +812,8 @@
 }
 
 \DeclareExamTemplate{questionbegin}{normal}{
-  \ifbool{exam@resetnumber}{
-    \ifbool{exam@onlyonequestion}{
+  \IfExamBoolTF{resetnumber}{
+    \IfExamBoolTF{onlyonequestion}{
       \renewcommand{\hangtext}{\qquad}
     }{
       \renewcommand{\hangtext}{\textbf{\textsf{\textcolor{question~number}{\arabic{question}}.}}\;\,}
@@ -702,7 +865,7 @@
 \let \oldmedskip   = \medskip
 \let \oldbigskip   = \bigskip
 
-\ifbool{exam@random}{
+\IfExamBoolTF{random}{
   \newcommand\rdxm@appto@questions{
     \xappto\allquestions{\expandonce\lastquestion}
   }
@@ -740,7 +903,7 @@
 }
 
 \newcommand{\rdxm@stop@random}{
-  \ifbool{exam@random}{
+  \IfExamBoolT{random}{
     \renewenvironment{question}{\questionreal}{\endquestionreal}
     \renewenvironment{solution}{\solutionreal}{\endsolutionreal}
     \let \newpage   = \oldnewpage
@@ -748,13 +911,13 @@
     \let \smallskip = \oldsmallskip
     \let \medskip   = \oldmedskip
     \let \bigskip   = \oldbigskip
-  }{}
+  }
 }
 
 \def\CommentCutFile{\jobname.cut}
 
 \AtBeginDocument{
-  \ifbool{exam@answer}{}{\excludecomment{solution}}
+  \IfExamBoolF{answer}{\excludecomment{solution}}
 }
 
 %% ---------------------------------------------------------------------------
@@ -848,26 +1011,32 @@
 %% Command for multiple-choice questions: \pickin and \pickout
 %% ---------------------------------------------------------------------------
 
-\newcommand{\answer}[1]{\ifbool{exam@answer}{#1}{\phantom{#1}}}
-
-\newcommand*{\cdotfill}{\leavevmode\xleaders\hbox to 0.5em{\hss$\cdot$\hss}\hfill\kern0pt\relax}
+\newcommand{\answer}[1]{\IfExamBoolTF{answer}{#1}{\phantom{#1}}}
 
 \newcommand*{\tick@box}[1]{[\makebox[1.5em]{\color{blue}\answer{#1}}]}
 \newcommand*{\tick@text@t}{$\checkmark$}
 \newcommand*{\tick@text@f}{{\large$\times$}}
 \newcommand*{\tick@text@T}{\sffamily T}
 \newcommand*{\tick@text@F}{\sffamily F}
-\newcommand*{\tickin}[1]{\tick@box{\csname tick@text@#1\endcsname}}
-\newcommand*{\tickout}[1]{\unskip\nobreak\cdotfill\tick@box{\csname tick@text@#1\endcsname}}
 
-\newcommand*{\ulinefill}[1]{\xleaders\hbox{\underline{\vphantom{#1}\kern1pt}}\hfill\kern0pt}
+\NewDocumentCommand\tickin{m}{
+  \tick@box{\csname tick@text@#1\endcsname}
+}
+\NewDocumentCommand\tickout{m}{
+  \unskip\nobreak\ExamFillCdot\tick@box{\csname tick@text@#1\endcsname}
+}
+
 \newcommand*{\minwidthbox}[2]{\makebox[{\ifdim#1<\width\width\else#1\fi}]{#2}}
 
-\newcommand*{\fillout}[1]{\allowbreak\hbox{}\nobreak\ulinefill{#1}\underline{\color{blue}\answer{#1}}\ulinefill{#1}}
-\newcommand*{\fillin}[1]{\underline{\hspace{1em}\color{blue}\minwidthbox{2em}{\answer{#1}}\hspace{1em}}}
+\NewDocumentCommand\fillout{m}{
+  \allowbreak\hbox{}\nobreak\ExamFillUlineText{\color{blue}\answer{#1}}
+}
+\NewDocumentCommand\fillin{m}{
+  \underline{\hspace{1em}\color{blue}\minwidthbox{2em}{\answer{#1}}\hspace{1em}}
+}
 
 \newcommand*\pickoutreal[1]{
-  \unskip\nobreak\cdotfill(\makebox[1.5em]{\color{blue}\answer{#1}})
+  \unskip\nobreak\ExamFillCdot(\makebox[1.5em]{\color{blue}\answer{#1}})
 }
 \newcommand*\pickinreal[1]{
   \unskip\nobreak
@@ -889,7 +1058,7 @@
 \newcommand\rdxm@shuffle@abcd[1]{\csuse{rdxm@shuffle@\@rdxm@choice@random @#1}}
 
 \newcommand*\pickout[1]{
-  \ifbool{exam@random}{
+  \IfExamBoolTF{random}{
     \exam@set@seed
     \pgfmathrandominteger\@rdxm@choice@random{1}{3}
     %\@rdxm@choice@random
@@ -900,10 +1069,10 @@
 }
 \newcommand*\pickoutfixed[1]{
   \pickoutreal{#1}
-  \boolfalse{exam@random}
+  \SetExamBoolFalse{random}
 }
 \newcommand*\pickin[1]{
-  \ifbool{exam@random}{
+  \IfExamBoolTF{random}{
     \exam@set@seed
     \pgfmathrandominteger\@rdxm@choice@random{1}{3}
     %\@rdxm@choice@random
@@ -914,7 +1083,7 @@
 }
 \newcommand*\pickinfixed[1]{
   \pickinreal{#1}
-  \boolfalse{exam@random}
+  \SetExamBoolFalse{random}
 }
 
 %% ---------------------------------------------------------------------------
@@ -1003,24 +1172,24 @@
   \fi
 }
 
-\ifbool{exam@random}{
+\IfExamBoolT{random}{
   \csdef{rdxm@swap@items@1}#1#2#3#4{\item#3\item#4\item#1\item#2}
   \csdef{rdxm@swap@items@2}#1#2#3#4{\item#2\item#1\item#4\item#3}
   \csdef{rdxm@swap@items@3}#1#2#3#4{\item#4\item#3\item#2\item#1}
   \long\def\rdxm@swap@items#1\item#2\item#3\item#4\item#5\@rdxm@stop@mark{
     #1\csuse{rdxm@swap@items@\@rdxm@choice@random}{#2}{#3}{#4}{#5}
   }
-}{}
+}
 
 \NewDocumentEnvironment{abcd}{+b}{
-  \ifbool{exam@random}{
+  \IfExamBoolTF{random}{
     \begin{abcdreal}\rdxm@swap@items#1\@rdxm@stop@mark\end{abcdreal}
   }{
     \begin{abcdreal}#1\end{abcdreal}
   }
 }{}
 \NewDocumentEnvironment{abcd*}{+b}{
-  \ifbool{exam@random}{
+  \IfExamBoolTF{random}{
     \begin{abcd*real}\rdxm@swap@items#1\@rdxm@stop@mark\end{abcd*real}
   }{
     \begin{abcd*real}#1\end{abcd*real}
@@ -1041,7 +1210,7 @@
 %% ---------------------------------------------------------------------------
 
 \AtBeginDocument{
-  \ifbool{exam@freealign}{\RequirePackage{freealign}}{}
+  \IfExamBoolT{freealign}{\RequirePackage{freealign}}
 }
 
 %% ---------------------------------------------------------------------------
@@ -1075,7 +1244,7 @@
 %% ---------------------------------------------------------------------------
 
 \AtBeginDocument{
-  \ifbool{exam@medmath}{\RequirePackage{medmath}}{}
+  \IfExamBoolT{medmath}{\RequirePackage{medmath}}
 }
 
 %% ---------------------------------------------------------------------------
@@ -1087,27 +1256,6 @@
   \setlength{\belowdisplayskip}{4pt minus 2pt}
   \setlength{\abovedisplayshortskip}{2pt}
   \setlength{\belowdisplayshortskip}{2pt}
-}
-
-\setlength\arraycolsep{4pt}
-
-\newrobustcmd\rdxm@moremath@diagbox{
-  \RequirePackage{diagbox}
-  %% Fix problem in using \diagbox in array environment
-  \newrobustcmd{\diagboxtwo}[3][]{
-    \ifbool{mmode}{
-      \hbox{\let\tabcolsep=\arraycolsep\diagbox[##1]{$##2$}{$##3$}}
-    }{
-      \diagbox[##1]{##2}{##3}
-    }
-  }
-  \newrobustcmd{\diagboxthree}[4][]{
-    \ifbool{mmode}{
-      \hbox{\let\tabcolsep=\arraycolsep\diagbox[##1]{$##2$}{$##3$}{$##4$}}
-    }{
-      \diagbox[##1]{##2}{##3}{##4}
-    }
-  }
 }
 
 \newrobustcmd\rdxm@moremath@limits{
@@ -1245,8 +1393,7 @@
   \def\T{\mathrm{T}\kern-.5pt}
 }
 
-\ifbool{exam@moremath}{
-  \rdxm@moremath@diagbox
+\IfExamBoolT{moremath}{
   \rdxm@moremath@limits
   \rdxm@moremath@differential
   \rdxm@moremath@widebar
@@ -1254,7 +1401,7 @@
   \rdxm@moremath@widefrac
   \rdxm@moremath@whitearrow
   \rdxm@moremath@miscellaneous
-}{}
+}
 
 %% ---------------------------------------------------------------------------
 %% Load local user config file
@@ -1266,23 +1413,17 @@
 %% Support for Chinese Language
 %% ---------------------------------------------------------------------------
 
+\IfExamLanguageEqT{chinese}{\SetExamBoolTrue{ctex}}
+
 \newrobustcmd\rdxm@chinese@ctex{
   %% 四号    小四号    五号      小五号
   %% 14bp    12bp      10.5bp    9bp
   %% 实际上，在旧版本 ctex 中只能用 cs4size 和 c5size 选项
   %% 而新版本 ctex 中，可以利用 zihao 选项指定各种中文字号
   \PassOptionsToPackage{CJKnumber}{xeCJK}
-  \RequirePackage[cs4size,UTF8,noindent,heading]{ctex}
-  \ifbool{exam@plain}{\pagestyle{plain}}{\pagestyle{fancy}}
+  \RequirePackage[cs4size,UTF8,noindent]{ctex}
   %% 在旧版本 xeCJK 中，必须用 CJKnumber 选项载入 CJKnumb 包，后面才载入会报错
   %% 但在新版本 xeCJK 中 CJKnumber 选项已经被废弃，需要在后面自行载入它
-  %% 在 xeCJK 中已经禁止载入 CJK，但是在新版本 ctex 宏包中却失效了
-  %% 我们假装 CJK 已经载入，再载入 CJKnumb，避免出现 \CJKglue 重复定义的问题
-  %% 注意用 PDFLaTeX 编译时需要用到 CJK，所以只在未定义时才作修改
-  \ifdefined\CJKglue
-    \@namedef{ver@CJK.sty}{}
-    %\@namedef{opt@CJK.sty}{}
-  \fi
   \RequirePackage{CJKnumb}
   %% 新版本 xeCJK 已经废弃并禁用 CJKfntef，改用 xeCJKfntef 取代，我们需要载入后者
   %% 注意要保证能在较旧的 TeX 系统中编译，我们只能用 \ifXeTeX 而不能用 \ifxetex
@@ -1299,7 +1440,7 @@
     \xeCJKsetcharclass{"2460}{"24FF}{1} % 带圈数字字母，括号数字字母，带点数字等
   }{}
 }
-\ifbool{exam@ctex}{\rdxm@chinese@ctex}{}
+\IfExamBoolT{ctex}{\rdxm@chinese@ctex}
 
 \newrobustcmd\rdxm@chinese@sourcehan{
   \setCJKmainfont[BoldFont=Source~Han~Sans~SC]{Source~Han~Serif~SC}
@@ -1309,11 +1450,11 @@
   %\setCJKsansfont{思源黑体}
 }
 \AtBeginDocument{
-  \ifbool{exam@sourcehan}{
+  \IfExamBoolT{sourcehan}{
     \ifbool{XeTeX}{\rdxm@chinese@sourcehan}{
       \ifbool{LuaTeX}{\rdxm@chinese@sourcehan}{}
     }
-  }{}
+  }
 }
 
 %% 这里不能用 \ifbool，因为涉及到 catcode 的改变
@@ -1348,7 +1489,7 @@
   ,question-Question    = 题
   ,solution-Solution    = 解
 }
-\ifbool{exam@ctex}{\SelectExamTranslation{chinese}}{}
+\IfExamBoolT{ctex}{\SelectExamTranslation{chinese}}
 
 %% ---------------------------------------------------------------------------
 %% Stop ignoring spaces in the code

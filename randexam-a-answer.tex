@@ -2,7 +2,7 @@
 % !TEX program = xelatex
 \documentclass[12pt,math=all]{randexam}
 
-%\boolfalse{exam@answer} % hide answers
+%\SetExamBoolFalse{answer} % hide answers
 
 \SetExamOption{
   seed = 19061116, % random seed
@@ -14,7 +14,7 @@
 
 \gradetable[total=4]
 
-\exampart{Fill in the blanks.}{6 questions; 3 points for each; 18 points in total.}
+\exampart{Fill in the blanks.}[6 questions; 3 points for each; 18 points in total.]
 
 % make answer table: six in total, three for each row, strut height 3em
 \answertable[total=6,column=3,strut=3em]
@@ -71,7 +71,7 @@ text text text text text text text text text text $\xi-2\eta\sim$ \fillout{$N(-3
 
 \newpage
 
-\exampart{Select one answer from four choices.}{6 questions; 3 points for each; 18 points in total.}
+\exampart{Select one answer from four choices.}[6 questions; 3 points for each; 18 points in total.]
 
 % make answer table: six in total, six for each row, default strut height
 \answertable[total=6,column=6]
@@ -170,7 +170,7 @@ text text text text text text text text text text text text text text \pickout{D
 
 \newpage
 
-\exampart{Work out math questions.}{6 questions; 8 points for each; 48 points in total.}
+\exampart{Work out math questions.}[6 questions; 8 points for each; 48 points in total.]
 
 \begin{question}
 The first question $\int\e^{2x}\,(\tan x+1)^2\dx$.
@@ -307,7 +307,7 @@ Text text $H_0:\mu=3140$ text text ($\alpha = 0.01$).
 
 \newpage
 
-\exampart{Work out math proofs.}{2 questions; 16 points in total.}
+\exampart{Work out math proofs.}[2 questions; 16 points in total.]
 
 \SetExamTranslation{solution-Solution=Proof} % rename "Solution" as "Proof"
 
