@@ -786,7 +786,8 @@
   \UseExamTemplate{examdata}{default}
 }
 
-\preto{\@enddocumenthook}{\printquestions\rdxm@stop@random}
+%% this equals to \AddToHook{enddocument}[randexam]{...}
+\AtEndDocument{\printquestions\rdxm@stop@random}
 
 \newcommand\ignorepars{\@ifnextchar\par{\expandafter\ignorepars\@gobble}{}}
 
