@@ -1229,6 +1229,11 @@
   \mbox{}\nobreak\hfill$\cdots\cdots$\solutionpointstext{#1}
   \par\noindent\ignorespaces
 }
+
+%% \eqno would cause extra space after a $$...$$ equation
+%% this bug was fixed in latex release 2023-06-01
+%% see https://github.com/latex3/latex2e/issues/1059
+%% \tag is used in a \[...\] equation hence no problem with it
 \newcommand{\pointseqno}[1]{\eqno{\cdots\cdots\text{\solutionpointstext{#1}}}}
 \newcommand{\pointstag}[1]{\tag*{$\cdots\cdots$\solutionpointstext{#1}}}
 
