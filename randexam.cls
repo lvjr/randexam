@@ -1375,6 +1375,9 @@
   \RequirePackage{extarrows}
   \newcommand{\e}{\mathrm{e}}
   \newcommand{\R}{\mathbb{R}}
+  \newcommand{\jacobi}[2]{{\left(\frac{##1}{##2}\right)}}
+  \newcommand{\ii}{\mathrm{i}}
+  \newcommand{\Zi}{\mathbb{Z}[\ii]}
   \DeclareMathOperator{\arccot}{arccot}
   \DeclareMathOperator{\Corr}{\rho}
   \DeclareMathOperator{\Cov}{Cov}
