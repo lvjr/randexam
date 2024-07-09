@@ -6,7 +6,7 @@
 % ----------------------------------------------------------------------------
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{randexam}[2024-02-18 v2024E Make an exam paper and its randomized variants]
+\ProvidesClass{randexam}[2024-07-09 v2024F Make an exam paper and its randomized variants]
 
 %% Old LaTeX release could not recognize date format like 2022-11-01
 %\@ifl@t@r\fmtversion{2022-11-01}{}{
